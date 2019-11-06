@@ -19,6 +19,7 @@
 #ifndef _IOT_UTIL_H_
 #define _IOT_UTIL_H_
 
+#include <sys/time.h>
 #include "iot_error.h"
 #include "iot_main.h"
 
@@ -102,6 +103,58 @@ iot_error_t iot_util_convert_mac_str(struct iot_mac* mac, char* str, int max_sz)
  * @return	Wi-Fi frequency
  */
 uint16_t iot_util_convert_channel_freq(uint8_t channel);
+
+
+#define MAX_TIMEDIFF_NAME_N		10
+/**
+ * @brief Structure for time diff profile
+ */
+typedef struct timediff_profile {
+	struct timeval tv_start;		/**< @brief timerecording's start time */
+	bool start_flag;				/**< @brief flag for timerecording start */
+	char name[MAX_TIMEDIFF_NAME_N + 1];		/**< @brief name of timerecording profile */
+	long stat_avg_sec;				/**< @brief average timerecording sec */
+	long stat_avg_usec;				/**< @brief average timerecording usec */
+	int stat_n;						/**< @brief timerecording count */
+
+	struct timediff_profile *next;
+} timediff_profile_t;
+
+#define IOT_TIMERECORD_START(name, want_print) iot_util_timerecord_start(name, want_print, __FUNCTION__, __LINE__)
+#define IOT_TIMERECORD_END(name, want_print) iot_util_timerecord_end(name, want_print, __FUNCTION__, __LINE__)
+
+/**
+ * @brief	To start timerecording
+ * @details	This function kick off timerecording
+ * @param[in]	name name of timerecordig profile
+ * @param[in]	want_print want to print detail information
+ * @param[in]	call_func function name of calling this
+ * @param[in]	line source line number of calling this
+ * @return	iot_error_t
+ * @retval	IOT_ERROR_NONE	success
+ */
+iot_error_t iot_util_timerecord_start(const char *name, bool want_print, const char *call_func, int line);
+
+/**
+ * @brief	To end timerecording
+ * @details	This function end timerecordig and record timediff from start
+ * @param[in]	name name of timerecordig profile
+ * @param[in]	want_print want to print detail information
+ * @param[in]	call_func function name of calling this
+ * @param[in]	line source line number of calling this
+ * @return	timediff in usec
+ */
+long iot_util_timerecord_end(const char *name, bool want_print, const char *call_func, int line);
+
+/**
+ * @brief	To print timerecording information
+ * @details	This function print detial information of timerecording
+ * @param[in]	name name of timerecordig profile
+ * @return	iot_error_t
+ * @retval	IOT_ERROR_NONE	success
+ * @retval	IOT_ERROR_INVALID_ARGS	invalid arguments
+ */
+iot_error_t iot_util_timerecord_print(const char *name);
 
 #ifdef __cplusplus
 }

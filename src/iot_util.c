@@ -320,3 +320,117 @@ iot_error_t iot_util_url_parse(char *url, url_parse_t *output)
 
 	return IOT_ERROR_NONE;
 }
+
+static timediff_profile_t head;
+
+iot_error_t iot_util_timerecord_start(const char *name, bool want_print, const char *call_func, int line)
+{
+	timediff_profile_t *td_pf = &head;
+	if (name) {
+		if (strlen(name) > MAX_TIMEDIFF_NAME_N || strlen(name) == 0) {
+			IOT_WARN("TIME RECORD Name length error[1~%d]", MAX_TIMEDIFF_NAME_N);
+			return IOT_ERROR_INVALID_ARGS;
+		}
+		while (td_pf->next) {
+			td_pf = td_pf->next;
+			if (!strncmp(name, td_pf->name, strlen(name)))
+				break;
+		}
+		if (strncmp(name, td_pf->name, strlen(name))) {
+			td_pf->next = malloc(sizeof(timediff_profile_t));
+			memset(td_pf->next, '\0', sizeof(timediff_profile_t));
+			td_pf = td_pf->next;
+			strncpy(td_pf->name, name, strlen(name));
+		}
+	}
+
+	/* TODO : Currently we record last start point.
+	 * We havt to consider other scenario too.
+	 */
+	td_pf->start_flag = true;
+	gettimeofday(&td_pf->tv_start, NULL);
+
+	if (want_print) {
+		IOT_INFO("[%s]TIME RECORD START at %s(%d)", name ? name : "default", call_func, line);
+	}
+
+	return IOT_ERROR_NONE;
+}
+
+long iot_util_timerecord_end(const char *name, bool want_print, const char *call_func, int line)
+{
+	struct timeval tv_end;
+	long timediff_sec, timediff_usec;
+	long tmp_sec, tmp_usec;
+	timediff_profile_t *td_pf = &head;
+	if (name) {
+		if (strlen(name) > MAX_TIMEDIFF_NAME_N || strlen(name) == 0) {
+			IOT_WARN("TIME RECORD Name length error[1~%d]", MAX_TIMEDIFF_NAME_N);
+			return -1;
+		}
+		while (td_pf->next) {
+			td_pf = td_pf->next;
+			if (!strncmp(name, td_pf->name, strlen(name)))
+				break;
+		}
+		if (strncmp(name, td_pf->name, strlen(name))) {
+			IOT_WARN("NO TIMERECORD[TAG:%s]", name);
+			return -1;
+		}
+	}
+
+	if (!td_pf->start_flag) {
+		IOT_WARN("NO TIMERECORD START[TAG:%s]", name ? name : "default");
+		return -1;
+	}
+	td_pf->start_flag = false;
+
+	gettimeofday(&tv_end, NULL);
+	timediff_sec = tv_end.tv_sec - td_pf->tv_start.tv_sec;
+	timediff_usec = tv_end.tv_usec - td_pf->tv_start.tv_usec;
+	if (timediff_usec < 0) {
+		timediff_sec -= 1;
+		timediff_usec += 1000000;
+	}
+
+	tmp_usec = (td_pf->stat_avg_usec * td_pf->stat_n) + timediff_usec;
+	tmp_sec = (td_pf->stat_avg_sec * td_pf->stat_n) + timediff_sec + tmp_usec / 1000000;
+	tmp_usec %= 1000000;
+	td_pf->stat_n++;
+	td_pf->stat_avg_sec = tmp_sec / td_pf->stat_n;
+	tmp_sec %= td_pf->stat_n;
+	td_pf->stat_avg_usec = (tmp_sec * 1000000 + tmp_usec) / td_pf->stat_n;
+
+	if (want_print) {
+		IOT_INFO("[%s]TIME RECORD END at %s(%d) %ld.%06ld AVG STAT %ld.%06ld sec count %d",
+			name ? name : "default", call_func, line, timediff_sec, timediff_usec,
+			td_pf->stat_avg_sec, td_pf->stat_avg_usec, td_pf->stat_n);
+	}
+
+	return timediff_sec * 1000000 + timediff_usec;
+}
+
+iot_error_t iot_util_timerecord_print(const char *name)
+{
+	timediff_profile_t *td_pf = &head;
+	if (name) {
+		if (strlen(name) > MAX_TIMEDIFF_NAME_N || strlen(name) == 0) {
+			IOT_WARN("TIME RECORD Name length error[1~%d]", MAX_TIMEDIFF_NAME_N);
+			return IOT_ERROR_INVALID_ARGS;
+		}
+		while (td_pf->next) {
+			td_pf = td_pf->next;
+			if (!strncmp(name, td_pf->name, strlen(name)))
+				break;
+		}
+		if (strncmp(name, td_pf->name, strlen(name))) {
+			IOT_WARN("NO TIMERECORD[TAG:%s]", name);
+			return IOT_ERROR_INVALID_ARGS;
+		}
+	}
+
+	IOT_INFO("[%s]TIME RECORD AVG STAT %ld.%06ld sec count %d",
+			name ? name : "default", td_pf->stat_avg_sec, td_pf->stat_avg_usec, td_pf->stat_n);
+
+	return IOT_ERROR_NONE;
+}
