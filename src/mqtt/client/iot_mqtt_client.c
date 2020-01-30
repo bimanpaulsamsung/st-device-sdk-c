@@ -356,7 +356,7 @@ int keepalive(MQTTClient *c)
 		iot_os_timer_count_ms(timer, c->command_timeout_ms);
 		int len = MQTTSerialize_pingreq(pbuf, MQTT_PINGREQ_MAX_SIZE);
 #ifdef CONFIG_STDK_IOT_CORE_PROFILE_PING
-               IOT_TIMERECORD_START("PING", 0);
+               IOT_TIMERECORD_START("PING", 1);
 #endif
 
 		if (len > 0 && !(rc = sendPacket(c, pbuf, len, timer))) { // send the ping packet
