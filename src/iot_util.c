@@ -348,7 +348,9 @@ iot_error_t iot_util_timerecord_start(const char *name, bool want_print, const c
 	 * We havt to consider other scenario too.
 	 */
 	td_pf->start_flag = true;
+	IOT_WARN("[PING AGING DEBUGING] before START gettimeofday call");
 	gettimeofday(&td_pf->tv_start, NULL);
+	IOT_WARN("[PING AGING DEBUGING] after START gettimeofday call %ld.%06ld", td_pf->tv_start.tv_sec, td_pf->tv_start.tv_usec);
 
 	if (want_print) {
 		IOT_INFO("[%s]TIME RECORD START at %s(%d)", name ? name : "default", call_func, line);
@@ -385,7 +387,9 @@ long iot_util_timerecord_end(const char *name, bool want_print, const char *call
 	}
 	td_pf->start_flag = false;
 
+	IOT_WARN("[PING AGING DEBUGING] before END gettimeofday call");
 	gettimeofday(&tv_end, NULL);
+	IOT_WARN("[PING AGING DEBUGING] after END gettimeofday call %ld.%06ld", tv_end.tv_sec, tv_end.tv_usec);
 	timediff_sec = tv_end.tv_sec - td_pf->tv_start.tv_sec;
 	timediff_usec = tv_end.tv_usec - td_pf->tv_start.tv_usec;
 	if (timediff_usec < 0) {
