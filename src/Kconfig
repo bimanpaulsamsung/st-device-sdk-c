@@ -65,6 +65,13 @@ config STDK_IOT_CORE_LOG_LEVEL_DEBUG
     help
        If this option is disabled, STDK will exclude DEBUG message code.
 
+config STDK_IOT_CORE_PROFILE_PING
+    bool "Enable Profile feature for ping"
+    default n
+    depends on STDK_IOT_CORE
+    help
+       If this option is enabled, STDK will check time diff from ping req to ping rsp.
+
 config STDK_IOT_CORE_SUPPORT_STNV_PARTITION
     bool "Use STNV Partition"
     default n
