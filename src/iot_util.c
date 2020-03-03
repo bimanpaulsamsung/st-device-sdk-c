@@ -405,6 +405,9 @@ long iot_util_timerecord_end(const char *name, bool want_print, const char *call
 		IOT_INFO("[%s]TIME RECORD END at %s(%d) %ld.%06ld AVG STAT %ld.%06ld sec count %d",
 			name ? name : "default", call_func, line, timediff_sec, timediff_usec,
 			td_pf->stat_avg_sec, td_pf->stat_avg_usec, td_pf->stat_n);
+		if (td_pf->stat_n % 100 == 1) {
+			IOT_MEM_CHECK("TIMERECORD_END");
+		}
 	}
 
 	return timediff_sec * 1000000 + timediff_usec;
