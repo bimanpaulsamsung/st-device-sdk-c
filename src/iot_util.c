@@ -384,7 +384,7 @@ iot_error_t iot_util_timerecord_start(const char *name, bool want_print, const c
 				break;
 		}
 		if (strncmp(name, td_pf->name, strlen(name))) {
-			td_pf->next = malloc(sizeof(timediff_profile_t));
+			td_pf->next = iot_os_malloc(sizeof(timediff_profile_t));
 			memset(td_pf->next, '\0', sizeof(timediff_profile_t));
 			td_pf = td_pf->next;
 			strncpy(td_pf->name, name, strlen(name));
