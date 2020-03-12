@@ -907,6 +907,7 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 		goto out;
 	}
 
+	input_len = result_len;
 	output_len = iot_crypto_cipher_get_align_size(IOT_CRYPTO_CIPHER_AES256, input_len);
 	if ((decrypt_buf = malloc(output_len)) == NULL) {
 		IOT_ERROR("failed to malloc for decrypt_buf");
@@ -915,7 +916,7 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 
 	err = _es_crypto_cipher_aes(ctx->es_crypto_cipher_info, IOT_CRYPTO_CIPHER_DECRYPT,
-						decode_buf, decrypt_buf, result_len, output_len, &result_len);
+						decode_buf, decrypt_buf, input_len, output_len, &result_len);
 	if (err) {
 		IOT_ERROR("AES256 Encryption error!! : %d", err);
 		err = IOT_ERROR_EASYSETUP_AES256_DECRYPTION_ERROR;
