@@ -303,33 +303,51 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 
 	if(wifi_init_status != e_wifi_init) {
 		IOT_ERROR("wifi not init");
-		return -1;
+		return 0;
 	}
 
 	if (scan_ap_list != NULL) {
-		os_free(scan_ap_list);
+		free(scan_ap_list);
 		scan_ap_list = NULL;
 	}
 
 	wifi_connection_scan_deinit();
 
-	scan_ap_list = os_malloc(sizeof(wifi_scan_list_item_t) * IOT_WIFI_MAX_SCAN_RESULT);
+	scan_ap_list = malloc(sizeof(wifi_scan_list_item_t) * IOT_WIFI_MAX_SCAN_RESULT);
 	if (scan_ap_list == NULL) {
 		IOT_ERROR("malloc failed");
-		return -1;
+		return 0;
 	}
+	memset(scan_ap_list, 0, sizeof(wifi_scan_list_item_t) * IOT_WIFI_MAX_SCAN_RESULT);
 
 	wifi_connection_register_event_handler(1, (wifi_event_handler_t) scan_event_handler_sample);
 	wifi_connection_scan_init(scan_ap_list, IOT_WIFI_MAX_SCAN_RESULT);
 	ret = wifi_connection_start_scan(NULL, 0, NULL, 0, 0);
 	if (ret < 0) {
 		IOT_ERROR("wifi connection scan failed");
-		os_free(scan_ap_list);
+		free(scan_ap_list);
 		scan_ap_list = NULL;
-		return -1;
+		return 0;
 	}
 
+	uint16_t scan_ap_num = 0;
 	for(i = 0; i < IOT_WIFI_MAX_SCAN_RESULT; i++){
+
+		IOT_DEBUG("mt7286 scan ssid=%s, mac=%02X:%02X:%02X:%02X:%02X:%02X, rssi=%d, authmode=%d chan=%d",
+			scan_ap_list[i].ssid,
+			scan_ap_list[i].bssid[0], scan_ap_list[i].bssid[1], scan_ap_list[i].bssid[2],
+			scan_ap_list[i].bssid[3], scan_ap_list[i].bssid[4], scan_ap_list[i].bssid[5], scan_ap_list[i].rssi,
+			scan_ap_list[i].auth_mode, scan_ap_list[i].channel);
+
+		if (scan_ap_list[i].ssid_length <= 0) {//ssid is null , skip invalid ap
+			continue;
+		}
+
+		if (scan_ap_list[i].bssid[0] == 0 && scan_ap_list[i].bssid[1] == 0
+			&&scan_ap_list[i].bssid[2] == 0 && scan_ap_list[i].bssid[3] == 0
+			&&scan_ap_list[i].bssid[4] == 0 && scan_ap_list[i].bssid[5] == 0) { //mac addr is invalid, skip
+			continue;
+		}
 		memcpy(scan_result[i].ssid, scan_ap_list[i].ssid, strlen((char *)scan_ap_list[i].ssid));
 		memcpy(scan_result[i].bssid, scan_ap_list[i].bssid, IOT_WIFI_MAX_BSSID_LEN);
 
@@ -337,15 +355,17 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 		scan_result[i].freq = iot_util_convert_channel_freq(scan_ap_list[i].channel);
 		scan_result[i].authmode = scan_ap_list[i].auth_mode;
 
-		IOT_INFO("mt7286 scan ssid=%s, mac=%02X:%02X:%02X:%02X:%02X:%02X, rssi=%d, freq=%d, authmode=%d chan=%d",
-						scan_result[i].ssid,
-						scan_result[i].bssid[0], scan_result[i].bssid[1], scan_result[i].bssid[2],
-						scan_result[i].bssid[3], scan_result[i].bssid[4], scan_result[i].bssid[5], scan_result[i].rssi,
-						scan_result[i].freq, scan_result[i].authmode, scan_ap_list[i].channel);
+		IOT_INFO("scan_ap_num %d mt7286 scan ssid=%s, mac=%02X:%02X:%02X:%02X:%02X:%02X, rssi=%d, freq=%d, authmode=%d chan=%d",
+			scan_ap_num,
+			scan_result[i].ssid,
+			scan_result[i].bssid[0], scan_result[i].bssid[1], scan_result[i].bssid[2],
+			scan_result[i].bssid[3], scan_result[i].bssid[4], scan_result[i].bssid[5], scan_result[i].rssi,
+			scan_result[i].freq, scan_result[i].authmode, scan_ap_list[i].channel);
+		scan_ap_num++;
 	}
-	os_free(scan_ap_list);
+	free(scan_ap_list);
 	scan_ap_list = NULL;
-	return 1;
+	return scan_ap_num;
 }
 
 iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac)
