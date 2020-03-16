@@ -177,6 +177,7 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, unsigned i
 	unsigned int bytesread = 0;
 	char* data = NULL;
 
+	IOT_ERROR_CHECK(handle.fd >= EMW_IOT_FD_NUM, IOT_ERROR_INVALID_ARGS, "Invalid fd %d", handle.fd);
 	fh = _get_mico_fh(handle.fd);
 	IOT_ERROR_CHECK(fh == NULL, IOT_ERROR_FS_READ_FAIL, "no mico file handle for fd");
 
@@ -204,6 +205,7 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char* data, unsig
 	OSStatus err = kNoErr;
 	unsigned int byteswritten;
 
+	IOT_ERROR_CHECK(handle.fd >= EMW_IOT_FD_NUM, IOT_ERROR_INVALID_ARGS, "Invalid fd %d", handle.fd);
 	fh = _get_mico_fh(handle.fd);
 	IOT_ERROR_CHECK(fh == NULL, IOT_ERROR_FS_WRITE_FAIL, "no mico file handle for fd");
 
@@ -218,6 +220,7 @@ iot_error_t iot_bsp_fs_close(iot_bsp_fs_handle_t handle)
 	mico_file_t *fh;
 	OSStatus err = kNoErr;
 
+	IOT_ERROR_CHECK(handle.fd >= EMW_IOT_FD_NUM, IOT_ERROR_INVALID_ARGS, "Invalid fd %d", handle.fd);
 	fh = _get_mico_fh(handle.fd);
 	if (fh) {
 		err = mico_filesystem_file_close(fh);
