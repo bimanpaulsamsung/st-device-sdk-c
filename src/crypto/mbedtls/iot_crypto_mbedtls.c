@@ -93,7 +93,7 @@ static iot_error_t _iot_crypto_url_decode(char *buf, size_t buf_len)
 	return IOT_ERROR_NONE;
 }
 
-iot_error_t iot_crypto_base64_encode(unsigned char *src, size_t src_len,
+iot_error_t iot_crypto_base64_encode(const unsigned char *src, size_t src_len,
                                      unsigned char *dst, size_t dst_len,
                                      size_t *out_len)
 {
@@ -112,7 +112,7 @@ iot_error_t iot_crypto_base64_encode(unsigned char *src, size_t src_len,
 	return IOT_ERROR_NONE;
 }
 
-iot_error_t iot_crypto_base64_decode(unsigned char *src, size_t src_len,
+iot_error_t iot_crypto_base64_decode(const unsigned char *src, size_t src_len,
                                      unsigned char *dst, size_t dst_len,
                                      size_t *out_len)
 {
@@ -131,7 +131,7 @@ iot_error_t iot_crypto_base64_decode(unsigned char *src, size_t src_len,
 	return IOT_ERROR_NONE;
 }
 
-iot_error_t iot_crypto_base64_encode_urlsafe(unsigned char *src, size_t src_len,
+iot_error_t iot_crypto_base64_encode_urlsafe(const unsigned char *src, size_t src_len,
                                              unsigned char *dst, size_t dst_len,
                                              size_t *out_len)
 {
@@ -158,49 +158,43 @@ iot_error_t iot_crypto_base64_encode_urlsafe(unsigned char *src, size_t src_len,
 	return IOT_ERROR_NONE;
 }
 
-iot_error_t iot_crypto_base64_decode_urlsafe(unsigned char *src, size_t src_len,
+iot_error_t iot_crypto_base64_decode_urlsafe(const unsigned char *src, size_t src_len,
                                              unsigned char *dst, size_t dst_len,
                                              size_t *out_len)
 {
 	int ret;
 	iot_error_t err = IOT_ERROR_NONE;
-	unsigned char *src_ptr;
-	unsigned char *pad = NULL;
+	unsigned char *src_dup = NULL;
 	size_t pad_len;
 	int i;
 
 	IOT_DEBUG("urlsafe: %s (%d)", src, src_len);
 
 	pad_len = IOT_CRYPTO_ALIGN_B64_LEN(src_len);
-	if (pad_len != src_len) {
-		pad = (unsigned char *)malloc(pad_len + 1);
-		if (pad == NULL) {
-			IOT_ERROR("malloc failed for align buffer");
-			return IOT_ERROR_MEM_ALLOC;
-		}
-
-		/* add padding with '=' */
-		memcpy(pad, src, src_len);
-		for (i = src_len; i < pad_len; i++) {
-			pad[i] = '=';
-		}
-		pad[pad_len] = '\0';
-
-		src_ptr = pad;
-	} else {
-		src_ptr = src;
+	src_dup = (unsigned char *)malloc(pad_len + 1);
+	if (src_dup == NULL) {
+		IOT_ERROR("malloc failed for align buffer");
+		return IOT_ERROR_MEM_ALLOC;
 	}
 
-	ret = _iot_crypto_url_decode((char *)src_ptr, pad_len);
+	memcpy(src_dup, src, src_len);
+	/* consider '=' removed from tail */
+	for (i = src_len; i < pad_len; i++) {
+		src_dup[i] = '=';
+	}
+	src_dup[pad_len] = '\0';
+
+	ret = _iot_crypto_url_decode((char *)src_dup, pad_len);
 	if (ret) {
 		IOT_ERROR("_iot_crypto_url_decode = %d", ret);
 		err = IOT_ERROR_CRYPTO_BASE64_URLSAFE;
 		goto exit;
 	}
 
-	IOT_DEBUG("base64 : %s (%d)", src_ptr, pad_len);
+	IOT_DEBUG("base64 : %s (%d)", src_dup, pad_len);
 
-	ret = mbedtls_base64_decode(dst, dst_len, out_len, src_ptr, pad_len);
+	ret = mbedtls_base64_decode(dst, dst_len, out_len,
+			(const unsigned char *)src_dup, pad_len);
 	if (ret) {
 		IOT_ERROR("mbedtls_base64_decode = -0x%04X", -ret);
 		err = IOT_ERROR_CRYPTO_BASE64_URLSAFE;
@@ -209,8 +203,8 @@ iot_error_t iot_crypto_base64_decode_urlsafe(unsigned char *src, size_t src_len,
 
 	IOT_DEBUG("plain : %s (%d)", dst, *out_len);
 exit:
-	if (pad)
-		free(pad);
+	if (src_dup)
+		free(src_dup);
 
 	return err;
 }
@@ -586,6 +580,21 @@ iot_error_t iot_crypto_cipher_aes(iot_crypto_cipher_info_t *info,
 	mbedtls_operation_t mode = MBEDTLS_ENCRYPT;
 	int ret;
 
+	if (!info) {
+		IOT_ERROR("cipher info is null");
+		return IOT_ERROR_INVALID_ARGS;
+	}
+
+	if (!input || !out || !olen) {
+		IOT_ERROR("buffer is null");
+		return IOT_ERROR_INVALID_ARGS;
+	}
+
+	if ((ilen == 0) || (osize == 0)) {
+		IOT_ERROR("buffer length is zero");
+		return IOT_ERROR_INVALID_ARGS;
+	}
+
 	IOT_DEBUG("input: %d@%p", ilen, input);
 	IOT_DEBUG("key:   %d@%p", info->key_len, info->key);
 	IOT_DEBUG("iv:    %d@%p", info->iv_len, info->iv);
@@ -618,6 +627,11 @@ iot_error_t iot_crypto_cipher_aes(iot_crypto_cipher_info_t *info,
 
 	if (info->mode == IOT_CRYPTO_CIPHER_ENCRYPT) {
 		if (osize < iot_crypto_cipher_get_align_size(info->type, ilen)) {
+			IOT_ERROR("output buffer size is not sufficient");
+			return IOT_ERROR_CRYPTO_CIPHER_OUTSIZE;
+		}
+	} else if (info->mode == IOT_CRYPTO_CIPHER_DECRYPT) {
+		if (osize < ilen) {
 			IOT_ERROR("output buffer size is not sufficient");
 			return IOT_ERROR_CRYPTO_CIPHER_OUTSIZE;
 		}

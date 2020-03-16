@@ -73,7 +73,7 @@ extern "C" {
  * @retval	IOT_ERROR_NONE	the string is sucessfully encoded
  * @retval	IOT_ERROR_CRYPTO_BASE64	failed to encode the string
  */
-iot_error_t iot_crypto_base64_encode(unsigned char *src, size_t src_len,
+iot_error_t iot_crypto_base64_encode(const unsigned char *src, size_t src_len,
                                      unsigned char *dst, size_t dst_len,
                                      size_t *out_len);
 
@@ -87,7 +87,7 @@ iot_error_t iot_crypto_base64_encode(unsigned char *src, size_t src_len,
  * @retval	IOT_ERROR_NONE	the string is sucessfully decoded
  * @retval	IOT_ERROR_CRYPTO_BASE64	failed to decode the string
  */
-iot_error_t iot_crypto_base64_decode(unsigned char *src, size_t src_len,
+iot_error_t iot_crypto_base64_decode(const unsigned char *src, size_t src_len,
                                      unsigned char *dst, size_t dst_len,
                                      size_t *out_len);
 
@@ -105,7 +105,7 @@ iot_error_t iot_crypto_base64_decode(unsigned char *src, size_t src_len,
  * @retval	IOT_ERROR_CRYPTO_BASE64_URLSAFE	failed to encode the string as
  *		urlsafe
  */
-iot_error_t iot_crypto_base64_encode_urlsafe(unsigned char *src, size_t src_len,
+iot_error_t iot_crypto_base64_encode_urlsafe(const unsigned char *src, size_t src_len,
                                              unsigned char *dst, size_t dst_len,
                                              size_t *out_len);
 
@@ -121,7 +121,7 @@ iot_error_t iot_crypto_base64_encode_urlsafe(unsigned char *src, size_t src_len,
  * @retval	IOT_ERROR_CRYPTO_BASE64_URLSAFE	failed to encode the string as
  *		urlsafe
  */
-iot_error_t iot_crypto_base64_decode_urlsafe(unsigned char *src, size_t src_len,
+iot_error_t iot_crypto_base64_decode_urlsafe(const unsigned char *src, size_t src_len,
                                              unsigned char *dst, size_t dst_len,
                                              size_t *out_len);
 
