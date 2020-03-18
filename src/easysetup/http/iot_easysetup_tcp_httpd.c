@@ -28,7 +28,12 @@
  ******************************************************************/
 
 #include <string.h>
+#if defined(CONFIG_STDK_IOT_CORE_OS_SUPPORT_MOCOS)
+#include "mico_socket.h"
+#include "mico_common.h"
+#else
 #include <sys/socket.h>
+#endif
 #include <errno.h>
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #include <netinet/in.h>

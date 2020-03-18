@@ -40,6 +40,8 @@ else ifeq ($(CONFIG_STDK_IOT_CORE_OS_SUPPORT_TIZENRT),y)
 	COMPONENT_SRCDIRS += port/os/tizenrt
 else ifeq ($(CONFIG_STDK_IOT_CORE_OS_SUPPORT_POSIX),y)
 	COMPONENT_SRCDIRS += port/os/posix
+else ifeq ($(CONFIG_STDK_IOT_CORE_OS_SUPPORT_MOCOS),y)
+	COMPONENT_SRCDIRS += port/os/mocos
 endif
 
 ifeq ($(CONFIG_STDK_IOT_CORE_NET_MBEDTLS),y)
