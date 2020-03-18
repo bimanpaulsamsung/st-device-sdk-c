@@ -340,10 +340,22 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 	IOT_INFO("curr_main_cmd:%d, curr_main_state:%d/%d",
 		cmd->cmd_type, ctx->curr_state, ctx->req_state);
 
+	/* Some State has to queue several commands sequentially
+	 * But sometiems next command queuing or next process can make error
+	 * after the first command queued successfully.
+	 * So to prevent the first command handling after error occurred,
+	 * added command skipping coroutine
+	 */
+	if (ctx->cmd_err && (cmd->cmd_type < IOT_COMMAND_TYPE_MAX)) {
+		IOT_WARN("iot-core had errors!!(0x%0x), skip cmd", ctx->cmd_err);
+		goto out_do_cmd;
+	}
+
 	switch (cmd->cmd_type) {
 		case IOT_CMD_STATE_HANDLE:
 			state_data = (struct iot_state_data *)cmd->param;
-			if (ctx->curr_state == state_data->iot_state) {
+			if ((ctx->curr_state > IOT_STATE_UNKNOWN) &&
+					(ctx->curr_state == state_data->iot_state)) {
 				IOT_WARN("Redundant command. state update in progress !");
 				break;
 			}
@@ -644,6 +656,7 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 			break;
 	}
 
+out_do_cmd:
 	if (err != IOT_ERROR_NONE) {
 		IOT_ERROR("failed to handle cmd: %d\n", cmd->cmd_type);
 	} else if (cmd->cmd_type != IOT_CMD_STATE_HANDLE) {
