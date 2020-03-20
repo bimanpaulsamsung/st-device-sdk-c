@@ -203,6 +203,10 @@ IOT_CAP_HANDLE *st_cap_handle_init(IOT_CTX *iot_ctx, const char *component,
 	struct iot_cap_handle_list *new_list;
 	struct iot_context *ctx = (struct iot_context*)iot_ctx;
 
+	if (!ctx || !capability) {
+	    return NULL;
+	}
+
 	handle = iot_os_malloc(sizeof(struct iot_cap_handle));
 	if (!handle) {
 		IOT_ERROR("failed to malloc for iot_cap_handle");
@@ -765,8 +769,8 @@ static iot_error_t _iot_parse_cmd_data(cJSON* cmditem, char** component,
 			else if (cJSON_IsObject(subitem)) {
 				cmd_data->args_str[num_args] = NULL;
 				cmd_data->cmd_data[num_args].type = IOT_CAP_VAL_TYPE_JSON_OBJECT;
-				cmd_data->cmd_data[num_args].json_payload = cJSON_PrintUnformatted(subitem);
-				IOT_DEBUG("[%d] %s", num_args, cmd_data->cmd_data[num_args].json_payload);
+				cmd_data->cmd_data[num_args].json_object = cJSON_PrintUnformatted(subitem);
+				IOT_DEBUG("[%d] %s", num_args, cmd_data->cmd_data[num_args].json_object);
 				num_args++;
 			}
 			subitem = subitem->next;
@@ -1051,7 +1055,7 @@ static void _iot_free_val(iot_cap_val_t* val)
 		}
 		free(val->strings);
 	} else if (val->type == IOT_CAP_VAL_TYPE_JSON_OBJECT) {
-		free(val->json_payload);
+		free(val->json_object);
 	}
 }
 

@@ -16,6 +16,7 @@ if(ENABLE_STDK_TEST)
                         ${st_device_sdk_c_SOURCE_DIR}/src/include/bsp/posix
                         ${st_device_sdk_c_SOURCE_DIR}/src/include/os
                         ${st_device_sdk_c_SOURCE_DIR}/src/include/mqtt
+                        ${st_device_sdk_c_SOURCE_DIR}/src/include/external
                         ${st_device_sdk_c_SOURCE_DIR}/src/deps/json/cJSON
                         ${st_device_sdk_c_SOURCE_DIR}/src/deps/mbedtls/mbedtls/include
                         ${st_device_sdk_c_SOURCE_DIR}/src/port/net/mbedtls)
@@ -30,7 +31,6 @@ if(ENABLE_STDK_TEST)
                    TEST_main.c
                    TC_MOCK_functions.c
                    TC_MOCK_functions.h
-                   TC_STORY_easysetup_d2d.c
                    TCs.h
                    TC_FUNC_iot_util.c
                    TC_FUNC_iot_api.c
@@ -48,6 +48,5 @@ if(ENABLE_STDK_TEST)
                           pthread
                           rt
                           cjson
-                          curl
                           )
 endif()

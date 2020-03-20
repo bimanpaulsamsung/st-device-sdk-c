@@ -63,6 +63,9 @@ void TC_st_cap_attr_create_string_null_unit(void **state);
 void TC_st_cap_attr_create_string_with_unit(void **state);
 void TC_st_cap_attr_create_string_internal_failure(void **state);
 void TC_st_cap_attr_create_string_null_parameters(void **state);
+void TC_st_cap_handle_init_invalid_argument(void **state);
+void TC_st_cap_handle_init_internal_failure(void **state);
+void TC_st_cap_handle_init_success(void **state);
 
 // TCs for iot_crypto.c
 int TC_iot_crypto_pk_setup(void **state);
@@ -77,6 +80,7 @@ int TC_iot_crypto_cipher_aes_teardown(void **state);
 void TC_iot_crypto_cipher_aes_null_parameter(void **state);
 void TC_iot_crypto_cipher_aes_invalid_parameter(void **state);
 void TC_iot_crypto_cipher_aes_success(void **state);
+void TC_iot_crypto_cipher_get_align_size(void **state);
 int TC_iot_crypto_ecdh_setup(void **state);
 int TC_iot_crypto_ecdh_teardown(void **state);
 void TC_iot_crypto_ecdh_invalid_parameter(void **state);
@@ -93,6 +97,7 @@ void TC_iot_crypto_base64_encode_success(void **state);
 void TC_iot_crypto_base64_decode_success(void **state);
 void TC_iot_crypto_base64_urlsafe_encode_success(void **state);
 void TC_iot_crypto_base64_urlsafe_decode_success(void **state);
+void TC_iot_crypto_base64_buffer_size(void **state);
 
 // TCs for iot_nv_data.c
 int TC_iot_nv_data_setup(void **state);
@@ -122,10 +127,7 @@ void TC_STATIC_es_deviceinfo_handler_null_parameter(void **state);
 void TC_STATIC_es_deviceinfo_handler_success(void **state);
 void TC_STATIC_es_keyinfo_handler_success(void **state);
 void TC_STATIC_es_wifiprovisioninginfo_handler_success(void **state);
-
-// TCs for easysetup d2d
-int TC_easysetup_d2d_setup(void **state);
-int TC_easysetup_d2d_teardown(void **state);
-void TC_easysetup_d2d_get_deviceinfo_success(void **state);
+void TC_STATIC_es_crypto_cipher_gen_iv_success(void **state);
+void TC_STATIC_es_wifiscaninfo_handler_invalid_parameters(void **state);
 
 #endif //ST_DEVICE_SDK_C_TCS_H

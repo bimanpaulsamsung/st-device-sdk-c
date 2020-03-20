@@ -21,8 +21,11 @@
 #include <setjmp.h>
 #include <cmocka.h>
 #include <st_dev.h>
+#include <string.h>
 #include <iot_capability.h>
 #include "TC_MOCK_functions.h"
+
+#define UNUSED(x) (void*)(x)
 
 int TC_iot_capability_teardown(void **state)
 {
@@ -239,4 +242,162 @@ void TC_st_cap_attr_create_string_null_parameters(void **state)
     assert_null(event);
 
     *state = NULL;
+}
+
+void test_cap_init_callback(IOT_CAP_HANDLE *handle, void *usr_data)
+{
+    assert_non_null(handle);
+    UNUSED(usr_data);
+}
+
+void TC_st_cap_handle_init_invalid_argument(void **state)
+{
+    IOT_CAP_HANDLE *cap_handle;
+    char *usr_data;
+    UNUSED(*state);
+
+    // Given
+    usr_data = strdup("UserString");
+    // When: IOT_CTX null
+    cap_handle = st_cap_handle_init(NULL, "main", "switch", test_cap_init_callback, usr_data);
+    // Then
+    assert_null(cap_handle);
+    // Teardown
+    free(usr_data);
+
+    // Given
+    usr_data = strdup("UserString");
+    // When: IOT_CTX, capability null
+    cap_handle = st_cap_handle_init(NULL, "main", NULL, test_cap_init_callback, usr_data);
+    // Then
+    assert_null(cap_handle);
+    // Teardown
+    free(usr_data);
+
+    // Given
+    usr_data = strdup("UserString");
+    // When: IOT_CTX, component and capability null
+    cap_handle = st_cap_handle_init(NULL, NULL, NULL, test_cap_init_callback, usr_data);
+    // Then
+    assert_null(cap_handle);
+    // Teardown
+    free(usr_data);
+
+    // Given
+    usr_data = strdup("UserString");
+    // When: IOT_CTX, component,capability and init_cb null
+    cap_handle = st_cap_handle_init(NULL, NULL, NULL, NULL, usr_data);
+    // Then
+    assert_null(cap_handle);
+    // Teardown
+    free(usr_data);
+
+    // When: all null
+    cap_handle = st_cap_handle_init(NULL, NULL, NULL, NULL, NULL);
+    // Then
+    assert_null(cap_handle);
+}
+
+void TC_st_cap_handle_init_internal_failure(void **state)
+{
+    IOT_CAP_HANDLE *cap_handle;
+    IOT_CTX context;
+    char *usr_data;
+    UNUSED(*state);
+
+    for (int i = 0; i < 2; i++) {
+        // Given: valid parameters but n-th malloc failure
+        usr_data = strdup("UserString");
+        context = (IOT_CTX) malloc(sizeof(struct iot_context));
+        memset(context, 0, sizeof(struct iot_context));
+        set_mock_iot_os_malloc_failure_with_index(i);
+        // When
+        cap_handle = st_cap_handle_init(context, "main", "switch", test_cap_init_callback, usr_data);
+        // Then
+        assert_null(cap_handle);
+        // Teardown
+        free(context);
+        free(usr_data);
+        do_not_use_mock_iot_os_malloc_failure();
+    }
+}
+
+void TC_st_cap_handle_init_success(void **state)
+{
+    IOT_CAP_HANDLE *cap_handle;
+    struct iot_cap_handle *handle;
+    struct iot_context *ctx = NULL;
+    IOT_CTX context;
+    char *usr_data;
+    UNUSED(*state);
+
+    // Given
+    usr_data = strdup("UserString");
+    context = (IOT_CTX)malloc(sizeof(struct iot_context));
+    memset(context, 0, sizeof(struct iot_context));
+    // When
+    cap_handle = st_cap_handle_init(context, "main", "switch", test_cap_init_callback, usr_data);
+    // Then
+    handle = (struct iot_cap_handle*)cap_handle;
+    ctx = (struct iot_context*) context;
+    assert_non_null(cap_handle);
+    assert_ptr_equal(ctx->cap_handle_list->handle, handle);
+    assert_null(ctx->cap_handle_list->next);
+    assert_null(handle->cmd_list);
+    assert_string_equal(handle->component, "main");
+    assert_string_equal(handle->capability, "switch");
+    assert_ptr_equal(handle->init_cb, test_cap_init_callback);
+    assert_ptr_equal(handle->init_usr_data, usr_data);
+    assert_ptr_equal(handle->ctx, ctx);
+    // Teardown
+    if (handle->capability) {
+        free((void*)handle->capability);
+    }
+    if (handle->component) {
+        free((void*)handle->component);
+    }
+    if (ctx->cap_handle_list) {
+        free(ctx->cap_handle_list);
+    }
+    free(context);
+    free(cap_handle);
+    free(usr_data);
+
+    // Given: Already existing handle in conext
+    usr_data = strdup("UserString");
+    context = (IOT_CTX)malloc(sizeof(struct iot_context));
+    memset(context, 0, sizeof(struct iot_context));
+    handle = (struct iot_cap_handle*)cap_handle;
+    ctx = (struct iot_context*) context;
+    ctx->cap_handle_list = malloc(sizeof(iot_cap_handle_list_t));
+    ctx->cap_handle_list->next = NULL;
+    // When
+    cap_handle = st_cap_handle_init(context, "main", "switch", test_cap_init_callback, usr_data);
+    // Then
+    assert_non_null(cap_handle);
+    assert_non_null(ctx->cap_handle_list->next);
+    assert_ptr_equal(ctx->cap_handle_list->next->handle, handle);
+    assert_null(ctx->cap_handle_list->next->next);
+    assert_null(handle->cmd_list);
+    assert_string_equal(handle->component, "main");
+    assert_string_equal(handle->capability, "switch");
+    assert_ptr_equal(handle->init_cb, test_cap_init_callback);
+    assert_ptr_equal(handle->init_usr_data, usr_data);
+    assert_ptr_equal(handle->ctx, ctx);
+    // Teardown
+    if (handle->capability) {
+        free((void*)handle->capability);
+    }
+    if (handle->component) {
+        free((void*)handle->component);
+    }
+    if (ctx->cap_handle_list->next) {
+        free(ctx->cap_handle_list->next);
+    }
+    if (ctx->cap_handle_list) {
+        free(ctx->cap_handle_list);
+    }
+    free(context);
+    free(cap_handle);
+    free(usr_data);
 }

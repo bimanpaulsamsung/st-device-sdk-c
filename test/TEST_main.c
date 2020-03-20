@@ -58,6 +58,9 @@ int TEST_FUNC_iot_capability(void)
             cmocka_unit_test_teardown(TC_st_cap_attr_create_string_with_unit, TC_iot_capability_teardown),
             cmocka_unit_test_teardown(TC_st_cap_attr_create_string_internal_failure, TC_iot_capability_teardown),
             cmocka_unit_test_teardown(TC_st_cap_attr_create_string_null_parameters, TC_iot_capability_teardown),
+            cmocka_unit_test(TC_st_cap_handle_init_invalid_argument),
+            cmocka_unit_test(TC_st_cap_handle_init_internal_failure),
+            cmocka_unit_test(TC_st_cap_handle_init_success),
     };
     return cmocka_run_group_tests_name("iot_capability.c", tests, NULL, NULL);
 }
@@ -73,6 +76,7 @@ int TEST_FUNC_iot_crypto(void)
             cmocka_unit_test_setup_teardown(TC_iot_crypto_cipher_aes_null_parameter, TC_iot_crypto_cipher_aes_setup, TC_iot_crypto_cipher_aes_teardown),
             cmocka_unit_test_setup_teardown(TC_iot_crypto_cipher_aes_invalid_parameter, TC_iot_crypto_cipher_aes_setup, TC_iot_crypto_cipher_aes_teardown),
             cmocka_unit_test_setup_teardown(TC_iot_crypto_cipher_aes_success, TC_iot_crypto_cipher_aes_setup, TC_iot_crypto_cipher_aes_teardown),
+            cmocka_unit_test(TC_iot_crypto_cipher_get_align_size),
             cmocka_unit_test_setup_teardown(TC_iot_crypto_ecdh_invalid_parameter, TC_iot_crypto_ecdh_setup, TC_iot_crypto_ecdh_teardown),
             cmocka_unit_test_setup_teardown(TC_iot_crypto_ecdh_success, TC_iot_crypto_ecdh_setup, TC_iot_crypto_ecdh_teardown),
             cmocka_unit_test_setup_teardown(TC_iot_crypto_ed25519_keypair_invalid_parameter, TC_iot_crypto_ed25519_keypair_setup, TC_iot_crypto_ed25519_keypair_teardown),
@@ -85,6 +89,7 @@ int TEST_FUNC_iot_crypto(void)
             cmocka_unit_test(TC_iot_crypto_base64_decode_success),
             cmocka_unit_test(TC_iot_crypto_base64_urlsafe_encode_success),
             cmocka_unit_test(TC_iot_crypto_base64_urlsafe_decode_success),
+            cmocka_unit_test(TC_iot_crypto_base64_buffer_size),
     };
     return cmocka_run_group_tests_name("iot_crypto.c", tests, NULL, NULL);
 }
@@ -134,9 +139,11 @@ int TEST_FUNC_iot_easysetup_d2d(void)
             cmocka_unit_test_setup_teardown(TC_iot_easysetup_create_ssid_success, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
             cmocka_unit_test(TC_iot_easysetup_request_handler_null_parameters),
             cmocka_unit_test(TC_STATIC_es_deviceinfo_handler_null_parameter),
+            cmocka_unit_test(TC_STATIC_es_crypto_cipher_gen_iv_success),
             cmocka_unit_test_setup_teardown(TC_STATIC_es_deviceinfo_handler_success, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
             cmocka_unit_test_setup_teardown(TC_STATIC_es_keyinfo_handler_success, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
             cmocka_unit_test_setup_teardown(TC_STATIC_es_wifiprovisioninginfo_handler_success, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_wifiscaninfo_handler_invalid_parameters, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
     };
     return cmocka_run_group_tests_name("iot_easysetup_d2d.c", tests, NULL, NULL);
 }
@@ -152,14 +159,6 @@ int TEST_FUNC_iot_easysetup_crypto(void)
 
 }
 
-int TEST_STORY_easysetup_d2d(void)
-{
-    const struct CMUnitTest tests[] = {
-            cmocka_unit_test_setup_teardown(TC_easysetup_d2d_get_deviceinfo_success, TC_easysetup_d2d_setup, TC_easysetup_d2d_teardown),
-    };
-    return cmocka_run_group_tests_name("easysetup d2d story", tests, NULL, NULL);
-}
-
 int main(void) {
     int err = 0;
 
@@ -171,7 +170,6 @@ int main(void) {
     err += TEST_FUNC_iot_uuid();
     err += TEST_FUNC_iot_easysetup_d2d();
     err += TEST_FUNC_iot_easysetup_crypto();
-    err += TEST_STORY_easysetup_d2d();
 
     return err;
 }

@@ -427,6 +427,47 @@ void TC_iot_crypto_cipher_aes_success(void **state)
 	free(plain);
 }
 
+void TC_iot_crypto_cipher_get_align_size(void **state)
+{
+	iot_crypto_cipher_type_t cipher_type;
+	size_t len;
+	size_t align_len;
+	size_t expected_len;
+
+	// Given: not supported cipher algorithm
+	cipher_type = -1;
+	// When
+	align_len = iot_crypto_cipher_get_align_size(cipher_type, len);
+	// Then
+	assert_int_equal(align_len, 0);
+
+	// Given: invalid input size
+	cipher_type = IOT_CRYPTO_CIPHER_AES256;
+	len = 0;
+	// When
+	align_len = iot_crypto_cipher_get_align_size(cipher_type, len);
+	// Then
+	assert_int_equal(align_len, 0);
+
+	// Given
+	cipher_type = IOT_CRYPTO_CIPHER_AES256;
+	len = 16;
+	expected_len = 32;
+	// When
+	align_len = iot_crypto_cipher_get_align_size(cipher_type, len);
+	// Then
+	assert_int_equal(align_len, expected_len);
+
+	// Given
+	cipher_type = IOT_CRYPTO_CIPHER_AES256;
+	len = 24;
+	expected_len = 32;
+	// When
+	align_len = iot_crypto_cipher_get_align_size(cipher_type, len);
+	// Then
+	assert_int_equal(align_len, expected_len);
+}
+
 static unsigned char things_seckey_ed25519[] = {
 	0x18, 0xdc, 0xba, 0x03, 0xef, 0xa9, 0x26, 0x19,
 	0x79, 0x24, 0xbd, 0x44, 0xae, 0x39, 0x3d, 0xe0,
@@ -924,4 +965,55 @@ void TC_iot_crypto_base64_urlsafe_decode_success(void **state)
 
 	// teardown
 	free(dst);
+}
+
+static const size_t b64_encode_len_input[] = {
+	2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+	17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+};
+
+static const size_t b64_encode_len_required[] = {
+	4, 4, 8, 8, 8, 12, 12, 12, 16, 16, 16, 20, 20, 20, 24,
+	24, 24, 28, 28, 28, 32, 32, 32, 36, 36, 36, 40, 40, 40, 44
+};
+
+static const size_t b64_decode_len_input[] = {
+	2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+	17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+};
+
+static const size_t b64_decode_len_required[] = {
+	3, 3, 3, 6, 6, 6, 6, 9, 9, 9, 9, 12, 12, 12, 12,
+	15, 15, 15, 15, 18, 18, 18, 18, 21, 21, 21, 21, 24, 24, 24
+};
+
+void TC_iot_crypto_base64_buffer_size(void **state)
+{
+	const size_t *input;
+	const size_t *expected;
+	size_t required_len;
+	int test_len;
+	int i;
+
+	// Given
+	test_len = sizeof(b64_encode_len_input) / sizeof(b64_encode_len_input[0]);
+	input = b64_encode_len_input;
+	expected = b64_encode_len_required;
+	for (i = 0; i < test_len; i++) {
+		// When
+		required_len = IOT_CRYPTO_CAL_B64_LEN(input[i]);
+		// Then
+		assert_int_equal(required_len, expected[i] + 1);
+	}
+
+	// Given
+	test_len = sizeof(b64_decode_len_input) / sizeof(b64_decode_len_input[0]);
+	input = b64_decode_len_input;
+	expected = b64_decode_len_required;
+	for (i = 0; i < test_len; i++) {
+		// When
+		required_len = IOT_CRYPTO_CAL_B64_DEC_LEN(input[i]);
+		// Then
+		assert_int_equal(required_len, expected[i] + 1);
+	}
 }
