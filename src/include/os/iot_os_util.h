@@ -361,8 +361,45 @@ void iot_os_timer_destroy(iot_os_timer* timer);
  *
  */
 void *iot_os_malloc(size_t size);
+
+/**
+ * @brief	allocate memory
+ *
+ * This function allocates memory for an array of nmemb elements of size bytes each
+ * and returns a pointer to the allocated memory.
+ *
+ * @param[in] nmemb count of memory block to allocate
+ * @param[in] size bytes of memory block to allocate
+ *
+ */
+void *iot_os_calloc(size_t nmemb, size_t size);
+
+/**
+ * @brief	free memory
+ *
+ * frees the memory space pointed to by ptr,
+ * which must have been returned by a previous call to iot_os_malloc
+ *
+ * @param[in] ptr pinter of memory
+ *
+ */
+void iot_os_free(void *ptr);
+
+/**
+ * @brief	duplicate a string
+ *
+ * this function returns a pointer to a new string which is a duplicate of the string src.
+ * Memory for the new string is obtained with iot_os_malloc, and can be freed with iot_os_free
+ *
+ * @param[in] src string to duplicate
+ *
+ */
+char *iot_os_strdup(const char *src);
 #else
 static inline void *iot_os_malloc(size_t size) { return malloc(size); }
+static inline void *iot_os_calloc(size_t nmemb, size_t size) { return calloc(nmemb, size); }
+static inline void iot_os_free(void *ptr) { return free(ptr); }
+static inline char *iot_os_strdup(const char *src) { return strdup(src); }
 #endif
 
 #endif /* _IOT_OS_UTIL_H_ */

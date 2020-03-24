@@ -682,6 +682,10 @@ iot_error_t _es_confirminfo_handler(struct iot_context *ctx, char *in_payload, c
 	unsigned char *decrypt_buf = NULL;
 	unsigned char *encrypt_buf = NULL;
 
+	if (!ctx || !in_payload) {
+	    return IOT_ERROR_EASYSETUP_INTERNAL_SERVER_ERROR;
+	}
+
 	root = JSON_PARSE(in_payload);
 	if (!root) {
 		IOT_ERROR("Invalid args");
@@ -758,8 +762,11 @@ iot_error_t _es_confirminfo_handler(struct iot_context *ctx, char *in_payload, c
 		err = _es_confirm_check_manager(ctx, recv->valueint, sn);
 		if (err != IOT_ERROR_NONE)
 			goto out;
-	} else
+	} else {
 		IOT_ERROR("Not supported otmsupportfeature : %d", recv->valueint);
+		err = IOT_ERROR_EASYSETUP_CONFIRM_NOT_SUPPORT ;
+		goto out;
+	}
 
 	if (root)
 		JSON_DELETE(root);
@@ -858,6 +865,16 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 	unsigned char *encode_buf = NULL;
 	unsigned char *encrypt_buf = NULL;
 
+	if (!ctx || !ctx->pin) {
+		IOT_ERROR("no pin from device app");
+		return IOT_ERROR_EASYSETUP_PIN_NOT_FOUND;
+	}
+
+	if (ctx->curr_otm_feature != OVF_BIT_PIN) {
+		IOT_ERROR("otm is not pin.");
+		return IOT_ERROR_EASYSETUP_INVALID_CMD;
+	}
+
 	root = JSON_PARSE(in_payload);
 	if (!root) {
 		IOT_ERROR("Invalid args");
@@ -917,9 +934,9 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 		goto out;
 	}
 
-	if (!ctx || !ctx->pin) {
-		IOT_ERROR("no pin from application");
-		err = IOT_ERROR_EASYSETUP_PIN_NOT_FOUND;
+	if (strlen(JSON_GET_STRING_VALUE(recv)) != PIN_SIZE) {
+		IOT_ERROR("pin size mistmatch");
+		err = IOT_ERROR_EASYSETUP_INVALID_PIN;
 		goto out;
 	}
 

@@ -27,6 +27,8 @@ void TC_iot_util_convert_str_uuid_success(void **state);
 void TC_iot_util_convert_str_uuid_null_parameters(void **state);
 
 // TCs for iot_api.c
+int TC_iot_api_memleak_detect_setup(void **state);
+int TC_iot_api_memleak_detect_teardown(void **state);
 void TC_iot_api_device_info_load_null_parameters(void **state);
 void TC_iot_api_device_info_load_success(void **state);
 void TC_iot_api_device_info_load_internal_failure(void **state);
@@ -129,5 +131,20 @@ void TC_STATIC_es_keyinfo_handler_success(void **state);
 void TC_STATIC_es_wifiprovisioninginfo_handler_success(void **state);
 void TC_STATIC_es_crypto_cipher_gen_iv_success(void **state);
 void TC_STATIC_es_wifiscaninfo_handler_invalid_parameters(void **state);
+void TC_STATIC_es_wifiscaninfo_handler_success(void **state);
+void TC_STATIC_es_confirminfo_handler_null_parameters(void **state);
+void TC_STATIC_es_confirminfo_handler_out_ranged_otm_feature(void **state);
+void TC_STATIC_es_confirminfo_handler_justworks_and_pin(void **state);
+void TC_STATIC_es_confirminfo_handler_qr_code(void **state);
+void TC_STATIC_es_confirminfo_handler_button(void **state);
+void TC_STATIC_es_confirm_handler_success(void** state);
+void TC_STATIC_es_confirm_handler_invalid_pin(void** state);
+void TC_STATIC_es_confirm_handler_non_pin_otm(void** state);
+
+// TCs for iot_main.c
+void TC_st_conn_init_null_parameters(void **state);
+void TC_st_conn_init_malloc_failure(void **state);
+void TC_st_conn_init_wrong_onboarding_config(void **state);
+void TC_st_conn_init_wrong_device_info(void **state);
 
 #endif //ST_DEVICE_SDK_C_TCS_H
