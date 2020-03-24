@@ -24,21 +24,21 @@
 int TEST_FUNC_iot_api(void)
 {
     const struct CMUnitTest tests[] = {
-            cmocka_unit_test(TC_iot_api_device_info_load_null_parameters),
-            cmocka_unit_test(TC_iot_api_device_info_load_success),
-            cmocka_unit_test(TC_iot_api_device_info_load_internal_failure),
-            cmocka_unit_test(TC_iot_api_device_info_load_without_firmware_version),
-            cmocka_unit_test(TC_iot_api_onboarding_config_load_null_parameters),
-            cmocka_unit_test(TC_iot_api_onboarding_config_load_template_parameters),
-            cmocka_unit_test(TC_iot_api_onboarding_config_load_success),
-            cmocka_unit_test(TC_iot_api_onboarding_config_load_internal_failure),
-            cmocka_unit_test(TC_iot_api_onboarding_config_without_mnid),
-            cmocka_unit_test(TC_iot_get_time_in_sec_null_parameters),
-            cmocka_unit_test(TC_iot_get_time_in_sec_success),
-            cmocka_unit_test(TC_iot_get_time_in_ms_null_parmaeters),
-            cmocka_unit_test(TC_iot_get_time_in_ms_success),
-            cmocka_unit_test(TC_iot_get_time_in_sec_by_long_null_parameters),
-            cmocka_unit_test(TC_iot_get_time_in_sec_by_long_success),
+            cmocka_unit_test_setup_teardown(TC_iot_api_device_info_load_null_parameters, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_api_device_info_load_success, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_api_device_info_load_internal_failure, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_api_device_info_load_without_firmware_version, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_api_onboarding_config_load_null_parameters, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_api_onboarding_config_load_template_parameters, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_api_onboarding_config_load_success, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_api_onboarding_config_load_internal_failure, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_api_onboarding_config_without_mnid, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_get_time_in_sec_null_parameters, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_get_time_in_sec_success, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_get_time_in_ms_null_parmaeters, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_get_time_in_ms_success, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_get_time_in_sec_by_long_null_parameters, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
+            cmocka_unit_test_setup_teardown(TC_iot_get_time_in_sec_by_long_success, TC_iot_api_memleak_detect_setup, TC_iot_api_memleak_detect_teardown),
     };
     return cmocka_run_group_tests_name("iot_api.c", tests, NULL, NULL);
 }
@@ -144,6 +144,15 @@ int TEST_FUNC_iot_easysetup_d2d(void)
             cmocka_unit_test_setup_teardown(TC_STATIC_es_keyinfo_handler_success, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
             cmocka_unit_test_setup_teardown(TC_STATIC_es_wifiprovisioninginfo_handler_success, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
             cmocka_unit_test_setup_teardown(TC_STATIC_es_wifiscaninfo_handler_invalid_parameters, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_wifiscaninfo_handler_success, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_confirminfo_handler_null_parameters, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_confirminfo_handler_out_ranged_otm_feature, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_confirminfo_handler_justworks_and_pin, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_confirminfo_handler_qr_code, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_confirminfo_handler_button, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_confirm_handler_success, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_confirm_handler_invalid_pin, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
+            cmocka_unit_test_setup_teardown(TC_STATIC_es_confirm_handler_non_pin_otm, TC_iot_easysetup_d2d_setup, TC_iot_easysetup_d2d_teardown),
     };
     return cmocka_run_group_tests_name("iot_easysetup_d2d.c", tests, NULL, NULL);
 }
@@ -159,6 +168,17 @@ int TEST_FUNC_iot_easysetup_crypto(void)
 
 }
 
+int TEST_FUNC_iot_main()
+{
+    const struct CMUnitTest tests[] = {
+            cmocka_unit_test(TC_st_conn_init_null_parameters),
+            cmocka_unit_test(TC_st_conn_init_malloc_failure),
+            cmocka_unit_test(TC_st_conn_init_wrong_onboarding_config),
+            cmocka_unit_test(TC_st_conn_init_wrong_device_info),
+    };
+    return cmocka_run_group_tests_name("iot_main.c", tests, NULL, NULL);
+}
+
 int main(void) {
     int err = 0;
 
@@ -170,6 +190,7 @@ int main(void) {
     err += TEST_FUNC_iot_uuid();
     err += TEST_FUNC_iot_easysetup_d2d();
     err += TEST_FUNC_iot_easysetup_crypto();
+    err += TEST_FUNC_iot_main();
 
     return err;
 }

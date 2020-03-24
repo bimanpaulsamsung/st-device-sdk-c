@@ -1,6 +1,6 @@
 /* ***************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright (c) 2019-2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,59 @@ iot_error_t iot_command_send(struct iot_context *ctx,
 	return err;
 }
 
+iot_error_t iot_wifi_ctrl_request(struct iot_context *ctx,
+		iot_wifi_mode_t wifi_mode)
+{
+	iot_error_t iot_err;
+	iot_wifi_conf wifi_conf;
+
+	if (!ctx) {
+		IOT_ERROR("There is no ctx\n");
+		return IOT_ERROR_BAD_REQ;
+	}
+
+	memset(&wifi_conf, 0, sizeof(wifi_conf));
+	wifi_conf.mode = wifi_mode;
+
+	switch (wifi_mode) {
+	case IOT_WIFI_MODE_STATION:
+		memcpy(wifi_conf.ssid, ctx->prov_data.wifi.ssid,
+			strlen(ctx->prov_data.wifi.ssid));
+		memcpy(wifi_conf.pass, ctx->prov_data.wifi.password,
+			strlen(ctx->prov_data.wifi.password));
+		break;
+
+	case IOT_WIFI_MODE_SOFTAP:
+		/*wifi soft-ap mode w/ ssid E4 format*/
+		iot_err = iot_easysetup_create_ssid(&(ctx->devconf),
+					wifi_conf.ssid, IOT_WIFI_MAX_SSID_LEN);
+		if (iot_err != IOT_ERROR_NONE) {
+			IOT_ERROR("Can't create ssid for easysetup.(%d)", iot_err);
+			return iot_err;
+		}
+
+		snprintf(wifi_conf.pass, sizeof(wifi_conf.pass), "1111122222");
+		break;
+
+	case IOT_WIFI_MODE_SCAN:
+		/* fall through */
+	case IOT_WIFI_MODE_OFF:
+		IOT_DEBUG("No need more settings for [%d] mode\n", wifi_mode);
+		break;
+
+	default:
+		IOT_ERROR("Unsupported wifi ctrl mode[%d]\n", wifi_mode);
+		return IOT_ERROR_BAD_REQ;
+	}
+
+	iot_err = iot_command_send(ctx,
+				IOT_COMMAND_NETWORK_MODE,
+					&wifi_conf, sizeof(wifi_conf));
+
+	return iot_err;
+}
+
+
 iot_error_t iot_easysetup_request(struct iot_context *ctx,
 				enum iot_easysetup_step step, const void *payload)
 {
@@ -139,15 +192,15 @@ void iot_api_onboarding_config_mem_free(struct iot_devconf_prov_data *devconf)
 		return;
 
 	if (devconf->device_onboarding_id)
-		free(devconf->device_onboarding_id);
+		iot_os_free(devconf->device_onboarding_id);
 	if (devconf->mnid)
-		free(devconf->mnid);
+		iot_os_free(devconf->mnid);
 	if (devconf->setupid)
-		free(devconf->setupid);
+		iot_os_free(devconf->setupid);
 	if (devconf->vid)
-		free(devconf->vid);
+		iot_os_free(devconf->vid);
 	if (devconf->device_type)
-		free(devconf->device_type);
+		iot_os_free(devconf->device_type);
 }
 
 static const char name_onboardingConfig[] = "onboardingConfig";
@@ -337,7 +390,7 @@ iot_error_t iot_api_onboarding_config_load(unsigned char *onboarding_config,
 	if (root)
 		JSON_DELETE(root);
 	if (data)
-		free(data);
+		iot_os_free(data);
 
 	return iot_err;
 
@@ -351,20 +404,27 @@ load_out:
 			IOT_ERROR("[%s] wrong onboarding config value detected", current_name);
 		}
 	}
-	if (device_onboarding_id)
-		free(device_onboarding_id);
-	if (mnid)
-		free(mnid);
-	if (setupid)
-		free(setupid);
-	if (vid)
-		free(vid);
-	if (devicetypeid)
-		free(devicetypeid);
-	if (root)
+	if (device_onboarding_id) {
+		iot_os_free(device_onboarding_id);
+	}
+	if (mnid) {
+		iot_os_free(mnid);
+	}
+	if (setupid) {
+		iot_os_free(setupid);
+	}
+	if (vid) {
+		iot_os_free(vid);
+	}
+	if (devicetypeid) {
+		iot_os_free(devicetypeid);
+	}
+	if (root) {
 		JSON_DELETE(root);
-	if (data)
-		free(data);
+	}
+	if (data) {
+		iot_os_free(data);
+	}
 
 	return iot_err;
 }
@@ -421,7 +481,7 @@ void iot_api_device_info_mem_free(struct iot_device_info *device_info)
 		return;
 
 	if (device_info->firmware_version) {
-		free(device_info->firmware_version);
+		iot_os_free(device_info->firmware_version);
 		device_info->firmware_version = NULL;
 	}
 }
@@ -488,7 +548,7 @@ iot_error_t iot_api_device_info_load(unsigned char *device_info,
 	if (root)
 		JSON_DELETE(root);
 	if (data)
-		free(data);
+		iot_os_free(data);
 
 	_dump_device_info(info);
 
@@ -510,11 +570,11 @@ load_out:
 		}
 	}
 	if (firmware_version)
-		free(firmware_version);
+		iot_os_free(firmware_version);
 	if (root)
 		JSON_DELETE(root);
 	if (data)
-		free(data);
+		iot_os_free(data);
 
 	return iot_err;
 }
