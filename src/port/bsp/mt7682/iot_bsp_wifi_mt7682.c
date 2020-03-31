@@ -39,6 +39,7 @@ enum e_wifi_init_status {
 	e_wifi_init,
 };
 static enum e_wifi_init_status wifi_init_status = e_wifi_uninit;
+static SemaphoreHandle_t scan_ready;
 
 static void _initialize_sntp(void)
 {
@@ -105,6 +106,7 @@ iot_error_t iot_bsp_wifi_init()
 	lwip_net_start(config.opmode);
 
 	wifi_init_status = e_wifi_init;
+	scan_ready = xSemaphoreCreateBinary();
 	return IOT_ERROR_NONE;
 }
 
@@ -287,6 +289,7 @@ static int scan_event_handler_sample(wifi_event_t event_id, unsigned char *paylo
         case WIFI_EVENT_IOT_SCAN_COMPLETE:
             handled = 1;
             IOT_INFO("[MTK Event Callback Sample]: Scan Done!\n");
+			xSemaphoreGive(scan_ready);
             break;
         default:
             handled = 0;
@@ -300,6 +303,7 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 {
 	int ret = 0;
 	int i = 0;
+	uint16_t scan_ap_num = 0;
 
 	if(wifi_init_status != e_wifi_init) {
 		IOT_ERROR("wifi not init");
@@ -320,7 +324,7 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 	}
 	memset(scan_ap_list, 0, sizeof(wifi_scan_list_item_t) * IOT_WIFI_MAX_SCAN_RESULT);
 
-	wifi_connection_register_event_handler(1, (wifi_event_handler_t) scan_event_handler_sample);
+	wifi_connection_register_event_handler(WIFI_EVENT_IOT_SCAN_COMPLETE, (wifi_event_handler_t) scan_event_handler_sample);
 	wifi_connection_scan_init(scan_ap_list, IOT_WIFI_MAX_SCAN_RESULT);
 	ret = wifi_connection_start_scan(NULL, 0, NULL, 0, 0);
 	if (ret < 0) {
@@ -330,9 +334,8 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 		return 0;
 	}
 
-	uint16_t scan_ap_num = 0;
-	for(i = 0; i < IOT_WIFI_MAX_SCAN_RESULT; i++){
-
+	xSemaphoreTake(scan_ready, portMAX_DELAY);
+	for(i = 0; i < IOT_WIFI_MAX_SCAN_RESULT; i++) {
 		IOT_DEBUG("mt7286 scan ssid=%s, mac=%02X:%02X:%02X:%02X:%02X:%02X, rssi=%d, authmode=%d chan=%d",
 			scan_ap_list[i].ssid,
 			scan_ap_list[i].bssid[0], scan_ap_list[i].bssid[1], scan_ap_list[i].bssid[2],
@@ -344,8 +347,8 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 		}
 
 		if (scan_ap_list[i].bssid[0] == 0 && scan_ap_list[i].bssid[1] == 0
-			&&scan_ap_list[i].bssid[2] == 0 && scan_ap_list[i].bssid[3] == 0
-			&&scan_ap_list[i].bssid[4] == 0 && scan_ap_list[i].bssid[5] == 0) { //mac addr is invalid, skip
+			&& scan_ap_list[i].bssid[2] == 0 && scan_ap_list[i].bssid[3] == 0
+			&& scan_ap_list[i].bssid[4] == 0 && scan_ap_list[i].bssid[5] == 0) { //mac addr is invalid, skip
 			continue;
 		}
 		memcpy(scan_result[i].ssid, scan_ap_list[i].ssid, strlen((char *)scan_ap_list[i].ssid));
@@ -365,6 +368,8 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 	}
 	free(scan_ap_list);
 	scan_ap_list = NULL;
+	wifi_connection_scan_deinit();
+	wifi_connection_unregister_event_handler(WIFI_EVENT_IOT_SCAN_COMPLETE,scan_event_handler_sample);
 	return scan_ap_num;
 }
 
