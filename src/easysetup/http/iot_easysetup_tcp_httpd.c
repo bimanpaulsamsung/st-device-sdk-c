@@ -58,6 +58,7 @@ char *method, // "GET" or "POST"
 	*qs,      // "a=1&b=2"     things after  '?'
 	*prot;    // "HTTP/1.1"
 
+static iot_os_thread es_tcp_task_handle = NULL;
 static void es_tcp_task(void *pvParameters)
 {
 	char *payload = NULL;
@@ -184,10 +185,11 @@ static void es_tcp_task(void *pvParameters)
 			close(sock);
 		}
 	}
+	/*set es_tcp_task_handle to null, prevent dulicate delete in es_tcp_deinit*/
+	es_tcp_task_handle = NULL;
 	iot_os_thread_delete(NULL);
 }
 
-static iot_os_thread es_tcp_task_handle = NULL;
 
 void es_tcp_init(void)
 {
