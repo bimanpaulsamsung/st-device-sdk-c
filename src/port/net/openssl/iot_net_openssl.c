@@ -17,13 +17,8 @@
  *   Ian Craggs - add ability to set message handler separately #6
  *******************************************************************************/
 #include <string.h>
-#if defined(CONFIG_STDK_IOT_CORE_OS_SUPPORT_MOCOS)
-#include "mico_socket.h"
-#include "mico_common.h"
-#else
 #include <netdb.h>
 #include <sys/socket.h>
-#endif
 #include <sys/time.h>
 #include <errno.h>
 #include <unistd.h>
