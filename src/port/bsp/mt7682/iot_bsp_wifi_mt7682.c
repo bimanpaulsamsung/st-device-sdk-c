@@ -260,7 +260,6 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
                 IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
                 _obtain_time();
         }
-
 		break;
 	case IOT_WIFI_MODE_SCAN:
 		ret = wifi_config_get_opmode(&prv_op_mode);
@@ -268,9 +267,13 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 			IOT_ERROR("MT7682 can't get curr WIFI mode");
 			return ret;
 		}
-		if (prv_op_mode != WIFI_MODE_STA_ONLY)
-		    wifi_set_sta(conf);
-		break;
+		if (prv_op_mode != WIFI_MODE_STA_ONLY && prv_op_mode != WIFI_MODE_AP_ONLY) {
+			IOT_ERROR("set scan mode error");
+			return -1;
+		}else {
+			IOT_INFO("set scan mode success");
+			break;
+		}
 	case IOT_WIFI_MODE_SOFTAP:
 		wifi_set_ap(conf);
 		break;
