@@ -1,0 +1,19 @@
+{
+    "name": "stdk",
+    "config": {
+        "present": 1,
+        "crypto-ed25519": {
+            "help": "STDK crypto Support ED25519",
+            "macro_name": "CONFIG_STDK_IOT_CORE_CRYPTO_SUPPORT_ED25519",
+            "value": true
+        },
+        "tls-mbedtls": {
+            "help": "Use mbedTLS",
+            "value": true
+        },
+        "tls-openssl": {
+            "help": "Use OpenSSL",
+            "value": false
+        }
+    }
+}
