@@ -28,26 +28,41 @@
 #include "MbedStdkQueue.h"
 #include "us_ticker_api.h"
 
-/* TODO: set correct values */
 const unsigned int iot_os_max_delay = osWaitForever;
 const unsigned int iot_os_true = 1;
 const unsigned int iot_os_false = 0;
+
+/* TODO: try to use callback type from thread.h */
+typedef void (*callbackFN)(void *); /* define Thread callback function type */
 
 /* Thread */
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
 		void* data, int priority, iot_os_thread* thread_handle)
 {
+	Thread *thread = new Thread(osPriorityNormal, stack_size, nullptr, name);
+	IOT_ERROR_CHECK(!thread, IOT_OS_FALSE, "Memory allocation Failed!!!");
+
+	osStatus status = thread->start(callback((callbackFN)thread_function, data));
+	if (status) {
+		delete thread;
+		return IOT_OS_FALSE;
+	}
+
+	if (thread_handle)
+		*thread_handle = thread;
+
 	return IOT_OS_TRUE;
 }
 
 void iot_os_thread_delete(iot_os_thread thread_handle)
 {
-
+	Thread *thread = (Thread *)thread_handle;
+	delete thread;
 }
 
 void iot_os_thread_yield()
 {
-
+	osThreadYield();
 }
 
 /* Queue */
@@ -186,51 +201,117 @@ unsigned int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
 /* Mutex */
 int iot_os_mutex_init(iot_os_mutex* mutex)
 {
+	IOT_ERROR_CHECK(!mutex, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+
+	Mutex *sem =  new Mutex();
+	IOT_ERROR_CHECK(!sem, IOT_ERROR_MEM_ALLOC, "Memory Allocation Failed!!!");
+
+	mutex->sem = sem;
 	return IOT_ERROR_NONE;
 }
 
 int iot_os_mutex_lock(iot_os_mutex* mutex)
 {
-	return  IOT_ERROR_NONE;
+	IOT_ERROR_CHECK(!mutex || !mutex->sem, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+	Mutex *sem = (Mutex *)mutex->sem;
+	osStatus ret = sem->lock();
+	if (ret == osOK)
+		return IOT_ERROR_NONE;
+
+	return  IOT_ERROR_BAD_REQ;
 }
 
 int iot_os_mutex_unlock(iot_os_mutex* mutex)
 {
-	return  IOT_ERROR_NONE;
+	IOT_ERROR_CHECK(!mutex, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+	Mutex *sem = (Mutex *)mutex->sem;
+	osStatus ret = sem->unlock();
+
+	if (ret == osOK)
+		return IOT_ERROR_NONE;
+
+	return  IOT_ERROR_BAD_REQ;
 }
 
 void iot_os_mutex_destroy(iot_os_mutex* mutex)
 {
-
+	if (!mutex || !mutex->sem) {
+		IOT_ERROR("Invalid Parameters!!!");
+		return;
+	}
+	delete (Mutex *)mutex->sem;
+	mutex->sem = NULL;
 }
 
 /* Delay */
 void iot_os_delay(unsigned int delay_ms)
 {
-
+	osDelay(delay_ms);
 }
+
+static unsigned int xTaskGetTickCount(void)
+{
+	return (us_ticker_read() / 1000L);
+}
+
+static void vTaskSetTimeOutState(unsigned int *mstime)
+{
+	*mstime = xTaskGetTickCount();
+}
+
+static bool xTaskCheckForTimeOut(unsigned int begin, unsigned int timeout)
+{
+	unsigned int mstime = xTaskGetTickCount();
+
+	if (mstime < (begin + timeout))
+		return false;
+
+	return true;
+}
+
+typedef struct Mbedos_Timer {
+	unsigned int msWait;
+	unsigned int beginTime;
+} Mbedos_Timer;
 
 void iot_os_timer_count_ms(iot_os_timer timer, unsigned int timeout_ms)
 {
-
+	((Mbedos_Timer *)timer)->msWait = timeout_ms; /* convert milliseconds to ticks */
+	vTaskSetTimeOutState(&((Mbedos_Timer *)timer)->beginTime); /* Record the time at which this function was entered. */
 }
 
 unsigned int iot_os_timer_left_ms(iot_os_timer timer)
 {
+	Mbedos_Timer *mbedos_timer = (Mbedos_Timer *)timer;
+	unsigned int cTime = xTaskGetTickCount();
+
+	if (cTime < (mbedos_timer->beginTime + mbedos_timer->msWait))
+		return (mbedos_timer->beginTime + mbedos_timer->msWait - cTime);
+
 	return 0;
 }
 
 char iot_os_timer_isexpired(iot_os_timer timer)
 {
-	return 0;
+	Mbedos_Timer *mbedos_timer = (Mbedos_Timer *)timer;
+	return xTaskCheckForTimeOut(mbedos_timer->beginTime,mbedos_timer->msWait);
 }
 
 int iot_os_timer_init(iot_os_timer *timer)
 {
+	*timer = malloc(sizeof(Mbedos_Timer));
+	if (*timer == NULL)
+		return IOT_ERROR_MEM_ALLOC;
+
+	memset(*timer, '\0', sizeof(Mbedos_Timer));
 	return IOT_ERROR_NONE;
 }
 
 void iot_os_timer_destroy(iot_os_timer *timer)
 {
+	if (timer == NULL || *timer == NULL)
+		return;
 
+	free(*timer);
+	*timer = NULL;
 }
