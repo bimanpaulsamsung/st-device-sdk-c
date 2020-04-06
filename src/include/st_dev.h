@@ -399,6 +399,10 @@ int st_conn_cleanup(IOT_CTX *iot_ctx, bool reboot);
 */
 void st_conn_ownership_confirm(IOT_CTX *iot_ctx, bool confirm);
 
+#ifdef CONFIG_SAMSUNG_BUILD_ENG
+int st_publish_event_raw(IOT_CTX *iot_ctx, char *event_payload);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

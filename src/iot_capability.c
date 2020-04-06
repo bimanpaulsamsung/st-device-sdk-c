@@ -1183,3 +1183,78 @@ static void _iot_free_evt_data(iot_cap_evt_data_t* evt_data)
 	}
 }
 /* External API */
+
+#ifdef CONFIG_SAMSUNG_BUILD_ENG
+int st_publish_event_raw(IOT_CTX *iot_ctx, char *event_payload)
+{
+	struct iot_context *ctx = (struct iot_context *)iot_ctx;
+	JSON_H *json_root = NULL;
+	JSON_H *json_arry = NULL;
+	JSON_H *json_events = NULL;
+	JSON_H *json_one_event = NULL;
+	JSON_H *json_prov_data = NULL;
+	char time_in_ms[16]; /* 155934720000 is '2019-06-01 00:00:00.00 UTC' */
+	iot_cap_msg_t final_msg;
+	int ret;
+	int i;
+
+	if (iot_ctx == NULL || event_payload == NULL) {
+		IOT_ERROR("args are invalid");
+		return IOT_ERROR_INVALID_ARGS;
+	}
+
+	if (ctx->curr_state < IOT_STATE_CLOUD_CONNECTING) {
+		IOT_ERROR("Target has not connected to server yet!!");
+		return IOT_ERROR_BAD_REQ;
+	}
+
+	json_events = JSON_PARSE(event_payload);
+	if (!json_events) {
+		IOT_ERROR("Invalid json format");
+		return IOT_ERROR_INVALID_ARGS;
+	}
+
+	if (JSON_IS_ARRAY(json_events)) {
+		json_arry = json_events;
+	} else {
+		json_arry = JSON_CREATE_ARRAY();
+		JSON_ADD_ITEM_TO_ARRAY(json_arry, json_events);
+	}
+
+	for (i = 0; i < JSON_GET_ARRAY_SIZE(json_arry); i ++) {
+		json_one_event = JSON_GET_ARRAY_ITEM(json_arry, i);
+
+		/* providerData */
+		sqnum = (sqnum + 1) & MAX_SQNUM;	// Use only positive number
+		json_prov_data = JSON_CREATE_OBJECT();
+		JSON_ADD_NUMBER_TO_OBJECT(json_prov_data, "sequenceNumber", sqnum);
+
+		if (iot_get_time_in_ms(time_in_ms, sizeof(time_in_ms)) != IOT_ERROR_NONE)
+			IOT_WARN("Cannot add optional timestamp value");
+		else
+			JSON_ADD_STRING_TO_OBJECT(json_prov_data, "timestamp", time_in_ms);
+		JSON_ADD_ITEM_TO_OBJECT(json_one_event, "providerData", json_prov_data);
+	}
+
+	json_root = JSON_CREATE_OBJECT();
+	JSON_ADD_ITEM_TO_OBJECT(json_root, "deviceEvents", json_arry);
+
+	final_msg.msg = JSON_PRINT(json_root);
+	final_msg.msglen = strlen(final_msg.msg);
+
+	ret = iot_os_queue_send(ctx->pub_queue, &final_msg, 0);
+	if (ret != IOT_OS_TRUE) {
+		IOT_WARN("Cannot put the paylod into pub_queue");
+		free(final_msg.msg);
+		JSON_DELETE(json_root);
+
+		return IOT_ERROR_BAD_REQ;
+	} else {
+		iot_os_eventgroup_set_bits(ctx->iot_events,
+			IOT_EVENT_BIT_CAPABILITY);
+	}
+
+	JSON_DELETE(json_root);
+	return IOT_ERROR_NONE;
+}
+#endif
