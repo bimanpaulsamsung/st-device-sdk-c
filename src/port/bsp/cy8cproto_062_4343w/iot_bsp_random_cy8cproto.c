@@ -17,8 +17,11 @@
  ****************************************************************************/
 
 #include "iot_bsp_random.h"
+#include <stdlib.h>
+#include "us_ticker_api.h"
 
 unsigned int iot_bsp_random()
 {
-	return 0;
+	srand((unsigned int)us_ticker_read());
+	return rand();
 }
