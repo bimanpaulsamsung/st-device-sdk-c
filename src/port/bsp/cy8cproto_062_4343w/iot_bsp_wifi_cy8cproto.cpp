@@ -16,36 +16,157 @@
  *
  ****************************************************************************/
 
+#include "mbed.h"
+#include "WhdSoftAPInterface.h"
+#include "EthernetInterface.h"
+
 #include "iot_debug.h"
 #include "iot_bsp_wifi.h"
 #include "iot_os_util.h"
 #include "iot_util.h"
 
+#define IOT_STDK_AP_IP		"192.168.4.1"
+#define IOT_STDK_AP_NETMASK	"255.255.255.0"
+#define IOT_STDK_AP_GATEWAY	"192.168.4.1"
+#define IOT_STDK_AP_CHANNEL	IOT_SOFT_AP_CHANNEL
+
+static int WIFI_INITIALIZED = false;
+bool ap_mode = false;
+
 iot_error_t iot_bsp_wifi_init()
 {
+	if (WIFI_INITIALIZED) {
+		return IOT_ERROR_NONE;
+	}
+
+	WIFI_INITIALIZED = true;
+
 	return IOT_ERROR_NONE;
+}
+
+static int connect_to_ap(char *wifi_ssid, char *wifi_password,
+		nsapi_security_t security = NSAPI_SECURITY_WPA_WPA2)
+{
+	WiFiInterface *wifi;
+	wifi = WiFiInterface::get_default_instance();
+	if (!wifi) {
+		IOT_ERROR("ERROR: No WiFiInterface found.");
+		return -1;
+	}
+
+	IOT_INFO("Connecting to %s...", wifi_ssid);
+	int ret = wifi->connect(wifi_ssid, wifi_password, security);
+	if (ret != 0) {
+		IOT_ERROR("Connection error: %d[0x%x]", ret, ret);
+		return -1;
+	}
+
+	IOT_INFO("Success");
+	IOT_INFO("IP: %s", wifi->get_ip_address());
+	IOT_DEBUG("MAC: %s", wifi->get_mac_address());
+	IOT_DEBUG("Netmask: %s", wifi->get_netmask());
+	IOT_DEBUG("Gateway: %s", wifi->get_gateway());
+	IOT_DEBUG("RSSI: %d", wifi->get_rssi());
+	return 0;
+}
+
+static int start_ap(char *wifi_ssid, char *wifi_password,
+		nsapi_security_t security = NSAPI_SECURITY_WPA_WPA2)
+{
+	WhdSoftAPInterface *_wifi;
+	nsapi_error_t error_code;
+
+	_wifi = WhdSoftAPInterface::get_default_instance();
+	if (!_wifi) {
+		IOT_ERROR("ERROR: No WhdSoftAPInterface found.");
+		return -1;
+	}
+
+	if (ap_mode) {
+		IOT_WARN("AP mode Already UP");
+		return 0;
+	}
+
+	IOT_INFO("Starting AP...");
+	_wifi->set_network(IOT_STDK_AP_IP, IOT_STDK_AP_NETMASK, IOT_STDK_AP_GATEWAY);
+	error_code = _wifi->start(wifi_ssid, wifi_password, security, IOT_STDK_AP_CHANNEL,
+			true, NULL, false);
+	IOT_ERROR_CHECK(error_code != NSAPI_ERROR_OK, -1, "Failed to Start AP");
+
+	ap_mode = true;
+	IOT_INFO("AP started successfully");
+	return 0;
+}
+
+static int stop_ap(void)
+{
+	WhdSoftAPInterface *_wifi;
+	nsapi_error_t error_code;
+
+	_wifi = WhdSoftAPInterface::get_default_instance();
+	if (!_wifi) {
+		IOT_ERROR("ERROR: No WhdSoftAPInterface found.");
+		return -1;
+	}
+
+	if (!ap_mode) {
+		IOT_WARN("AP mode Already DOWN ");
+		return 0;
+	}
+
+	IOT_INFO("Stopping AP");
+	error_code = _wifi->stop();
+	IOT_ERROR_CHECK(error_code != NSAPI_ERROR_OK, -1, "Failed to Stop AP");
+
+	ap_mode = false;
+	IOT_INFO("AP Stopped successfully");
+	return 0;
 }
 
 iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 {
-	int str_len = 0;
+	if (!conf)
+		return IOT_ERROR_INVALID_ARGS;
 
 	switch(conf->mode) {
 	case IOT_WIFI_MODE_OFF: {
-		// TODO: Turn off WiFi
+		stop_ap();
 		break;
 	}
 	case IOT_WIFI_MODE_SCAN: {
-		//TODO: ensure AP is turned off and scan
+		WiFiInterface *wifi;
+
+		IOT_DEBUG("SCAN in Mode: %s", ap_mode ? "AP Mode" : "STA Mode");
+		wifi = WiFiInterface::get_default_instance();
+		if (!wifi) {
+			IOT_ERROR("ERROR: No WiFiInterface found.");
+			return IOT_ERROR_NET_INVALID_INTERFACE;
+		}
+
+		IOT_INFO("Scan:");
+		int count = wifi->scan(NULL,0);
+		if (count <= 0) {
+			IOT_ERROR("scan() failed with return value: %d", count);
+			return IOT_ERROR_CONNECT_FAIL;
+		}
 		break;
 	}
 	case IOT_WIFI_MODE_STATION: {
-		//TODO: ensure AP is turned off and STA is turned on
+		stop_ap();
 
+		IOT_INFO("Start STA mode");
+		if (connect_to_ap(conf->ssid, conf->pass) < 0) {
+			IOT_ERROR("Could not connect to %s", conf->ssid);
+			return IOT_ERROR_CONNECT_FAIL;
+		}
+
+		IOT_INFO("Time is not set yet. Getting time over NTP.");
 		break;
 	}
 	case IOT_WIFI_MODE_SOFTAP: {
-		//TODO: ensure AP is turned on
+		if (start_ap(conf->ssid, conf->pass) < 0)
+			return IOT_ERROR_CONNECT_FAIL;
+
 		break;
 	}
 	default:
@@ -56,14 +177,98 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 	return IOT_ERROR_NONE;
 }
 
+static iot_wifi_auth_mode_t get_security_from_nsapi(nsapi_security_t sec) {
+	switch (sec) {
+	case NSAPI_SECURITY_NONE:
+		return IOT_WIFI_AUTH_OPEN;
+	case NSAPI_SECURITY_WEP:
+		return IOT_WIFI_AUTH_WEP;
+	case NSAPI_SECURITY_WPA:
+		return IOT_WIFI_AUTH_WPA_PSK;
+	case NSAPI_SECURITY_WPA2:
+		return IOT_WIFI_AUTH_WPA2_PSK;
+	case NSAPI_SECURITY_WPA_WPA2:
+		return IOT_WIFI_AUTH_WPA_WPA2_PSK;
+	case NSAPI_SECURITY_WPA2_ENT:
+		return IOT_WIFI_AUTH_WPA2_ENTERPRISE;
+	default:
+		return IOT_WIFI_AUTH_MAX;
+	}
+}
+
 uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 {
-	return 0;
+	WiFiAccessPoint *ap;
+	WiFiInterface *wifi;
+
+	if (!scan_result) {
+		IOT_ERROR("ERROR: Invalid Parameter");
+		return 0;
+	}
+
+	wifi = WiFiInterface::get_default_instance();
+	if (!wifi) {
+		IOT_ERROR("ERROR: No WiFiInterface found.");
+		return 0;
+	}
+
+	IOT_INFO("Scan:");
+	int count = wifi->scan(NULL,0);
+	if (count <= 0) {
+		IOT_ERROR("scan() failed with return value: %d", count);
+		return 0;
+	}
+
+	/* Limit number of networks */
+	count = count < IOT_WIFI_MAX_SCAN_RESULT ? count : IOT_WIFI_MAX_SCAN_RESULT;
+
+	ap = new WiFiAccessPoint[count];
+	count = wifi->scan(ap, count);
+
+	if (count <= 0) {
+		IOT_ERROR("scan() failed with return value: %d", count);
+		delete[] ap;
+		return 0;
+	}
+
+	for (int i = 0; i < count; i++) {
+		IOT_DEBUG("Network: %s secured: %s BSSID: %hhX:%hhX:%hhX:%hhx:%hhx:%hhx RSSI: %hhd Ch: %hhd", ap[i].get_ssid(),
+				sec2str(ap[i].get_security()), ap[i].get_bssid()[0], ap[i].get_bssid()[1], ap[i].get_bssid()[2],
+				ap[i].get_bssid()[3], ap[i].get_bssid()[4], ap[i].get_bssid()[5], ap[i].get_rssi(), ap[i].get_channel());
+
+		memcpy(scan_result[i].ssid, ap[i].get_ssid(), strlen(ap[i].get_ssid()));
+		const uint8_t *ap_mac = ap[i].get_bssid();
+		scan_result[i].bssid[0] = ap_mac[0];
+		scan_result[i].bssid[1] = ap_mac[1];
+		scan_result[i].bssid[2] = ap_mac[2];
+		scan_result[i].bssid[3] = ap_mac[3];
+		scan_result[i].bssid[4] = ap_mac[4];
+		scan_result[i].bssid[5] = ap_mac[5];
+
+		scan_result[i].rssi = ap[i].get_rssi();
+		scan_result[i].freq = iot_util_convert_channel_freq(ap[i].get_channel());
+		scan_result[i].authmode = get_security_from_nsapi(ap[i].get_security());
+	}
+	IOT_INFO("%d networks available.", count);
+
+	delete[] ap;
+	return count;
 }
 
 //TODO: get correct MAC address
-iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac)
-{
+extern "C" void mbed_mac_address(char *s);
+
+iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac) {
+	if (!wifi_mac)
+		return IOT_ERROR_INVALID_ARGS;
+
+	char mac[6];
+	mbed_mac_address(mac);
+
+	for (int i = 0; i < IOT_WIFI_MAX_BSSID_LEN; i++) {
+		wifi_mac->addr[i] = mac[i];
+	}
+
 	return IOT_ERROR_NONE;
 }
 
