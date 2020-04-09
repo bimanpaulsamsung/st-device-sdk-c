@@ -218,18 +218,7 @@ static iot_error_t _iot_wifi_set_station(iot_wifi_conf *conf)
 
 static iot_error_t _iot_wifi_set_scan(void)
 {
-	OSStatus err = kNoErr;
-	network_InitTypeDef_st net_config;
-
-	memset(&net_config, 0x0, sizeof(network_InitTypeDef_st));
-	net_config.wifi_mode = Station;
-	net_config.dhcpMode = DHCP_Client;
-	net_config.wifi_retry_interval = 100;
-
-	/* set station mode with no ssid/pw*/
-	err = micoWlanStart(&net_config);
-	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_BAD_REQ,"micoWlanStart fail");
-
+	IOT_INFO("currently we do nothing for set_scan.");
 	return IOT_ERROR_NONE;
 }
 
