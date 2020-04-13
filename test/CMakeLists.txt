@@ -1,5 +1,15 @@
-option(ENABLE_STDK_TEST "Enables st-device-sdk-c test" ON)
-if(ENABLE_STDK_TEST)
+option(ENABLE_STDK_UNIT_TEST "Enables st-device-sdk-c unit test" OFF)
+option(ENABLE_STDK_CTS "Enables st-device-sdk-c cts" OFF)
+
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_BUILD_TYPE MATCHES UnitTest)
+    set(ENABLE_STDK_UNIT_TEST ON)
+endif()
+
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
+    set(ENABLE_STDK_CTS ON)
+endif()
+
+if(ENABLE_STDK_UNIT_TEST)
     set(CMOCKA_DIR framework/cmocka)
     add_subdirectory(${CMOCKA_DIR})
     include_directories(${cmocka-header_SOURCE_DIR}
@@ -46,4 +56,36 @@ if(ENABLE_STDK_TEST)
                           rt
                           cjson
                           )
+endif()
+
+
+if(ENABLE_STDK_CTS)
+    set(CMOCKA_DIR framework/cmocka)
+    add_subdirectory(${CMOCKA_DIR})
+    include_directories(${cmocka-header_SOURCE_DIR}
+                        ${st_device_sdk_c_SOURCE_DIR}/src/include
+                        ${st_device_sdk_c_SOURCE_DIR}/src/include/certs
+                        ${st_device_sdk_c_SOURCE_DIR}/src/include/bsp
+                        ${st_device_sdk_c_SOURCE_DIR}/src/include/bsp/posix
+                        ${st_device_sdk_c_SOURCE_DIR}/src/include/os
+                        ${st_device_sdk_c_SOURCE_DIR}/src/include/mqtt
+                        ${st_device_sdk_c_SOURCE_DIR}/src/include/external
+                        ${st_device_sdk_c_SOURCE_DIR}/src/deps/json/cJSON
+                        ${st_device_sdk_c_SOURCE_DIR}/src/deps/mbedtls/mbedtls/include
+                        ${st_device_sdk_c_SOURCE_DIR}/src/port/net/mbedtls
+                        )
+
+    add_executable(stdk_cts
+                   CTS_posix_main.c
+                   framework/cts/cts_iot_bsp.c
+                   framework/cts/cts_iot_os.c
+                   framework/cts/include/cts.h
+                   )
+    target_link_libraries(stdk_cts
+                          PRIVATE
+                          iotcore
+                          cmocka
+                          pthread
+                          rt
+                          cjson)
 endif()
