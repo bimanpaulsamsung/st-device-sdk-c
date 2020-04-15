@@ -23,9 +23,13 @@
 #include "iot_os_util.h"
 #include "iot_debug.h"
 
+#include "cmsis_os2.h"
+#include "mbed.h"
+#include "MbedStdkQueue.h"
+#include "us_ticker_api.h"
 
 /* TODO: set correct values */
-const unsigned int iot_os_max_delay = 0xFFFFFFFF;
+const unsigned int iot_os_max_delay = osWaitForever;
 const unsigned int iot_os_true = 1;
 const unsigned int iot_os_false = 0;
 
@@ -49,27 +53,56 @@ void iot_os_thread_yield()
 /* Queue */
 iot_os_queue* iot_os_queue_create(int queue_length, int item_size)
 {
-	return NULL;
+	MbedStdkQueue *queue = new MbedStdkQueue(queue_length, item_size);
+	return queue;
 }
 
 int iot_os_queue_reset(iot_os_queue* queue_handle)
 {
+	MbedStdkQueue *queue = (MbedStdkQueue *)queue_handle;
+	IOT_ERROR_CHECK(queue == NULL, IOT_OS_FALSE, "Invalid Queue");
+	IOT_WARN("Queue Reset");
+	queue->queueReset();
 	return IOT_OS_TRUE;
 }
 
 void iot_os_queue_delete(iot_os_queue* queue_handle)
 {
-
+	MbedStdkQueue *queue = (MbedStdkQueue *)queue_handle;
+	if (!queue) {
+		IOT_ERROR("Queue Delete: Invalid Queue!!!");
+		return;
+	}
+	delete queue;
 }
 
 int iot_os_queue_send(iot_os_queue* queue_handle, void * data, unsigned int wait_time_ms)
 {
+	MbedStdkQueue *queue = (MbedStdkQueue *)queue_handle;
+	IOT_ERROR_CHECK(queue == NULL, IOT_OS_FALSE, "Invalid Queue");
+	IOT_ERROR_CHECK(data == NULL, IOT_OS_FALSE, "Invalid Data");
+
+	if (queue->put(data, wait_time_ms) != osOK) {
+		IOT_ERROR("Failed to put data in queue");
+		return IOT_OS_FALSE;
+	}
 	return IOT_OS_TRUE;
 }
 
 int iot_os_queue_receive(iot_os_queue* queue_handle, void * data, unsigned int wait_time_ms)
 {
-	return IOT_OS_TRUE;
+	MbedStdkQueue *queue = (MbedStdkQueue *)queue_handle;
+	IOT_ERROR_CHECK(queue == NULL, IOT_OS_FALSE, "Invalid Queue");
+	IOT_ERROR_CHECK(data == NULL, IOT_OS_FALSE, "Invalid data Buffer");
+
+	IOT_DEBUG("Queue Count: %d", queue->count());
+	osEvent evt = queue->get(data, wait_time_ms);
+	IOT_DEBUG("Queue STATUS: %d", evt.status);
+	if (evt.status == osEventMessage) {
+		return IOT_OS_TRUE;
+	}
+	IOT_ERROR("Failed to get data from queue");
+	return IOT_OS_FALSE;
 }
 
 /* Event Group */
