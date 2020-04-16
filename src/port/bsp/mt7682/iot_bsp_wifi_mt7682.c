@@ -87,7 +87,7 @@ iot_error_t iot_bsp_wifi_init()
 
 	if(wifi_init_status == e_wifi_init) {
 		IOT_INFO("wifi is already initialized, returning");
-		return;
+		return IOT_ERROR_NONE;
 	}
 #if CONFIG_INIT_NET
 #if CONFIG_LWIP_LAYER
@@ -110,7 +110,7 @@ iot_error_t iot_bsp_wifi_init()
 	return IOT_ERROR_NONE;
 }
 
-iot_error_t wifi_set_sta(iot_wifi_conf *conf)
+int32_t wifi_set_sta(iot_wifi_conf *conf)
 {
 	uint8_t prv_op_mode = 0;
 	uint8_t target_mode;
@@ -168,13 +168,13 @@ iot_error_t wifi_set_sta(iot_wifi_conf *conf)
 	IOT_INFO("wlan sta start enter");
 	ret = wlan_sta_start(ssid, passwd, 0);
 	IOT_INFO("wlan sta start out");
-	if (ret < 0)
+	if (ret != 0)
 		IOT_ERROR("MT7682 can't set new WIFI mode:%d", target_mode);
 
 	return ret;
 }
 
-iot_error_t wifi_set_ap(iot_wifi_conf *conf)
+int32_t wifi_set_ap(iot_wifi_conf *conf)
 {
 	uint8_t prv_op_mode = 0;
 	uint8_t target_mode;
@@ -244,42 +244,56 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 
 	if (conf == NULL) {
 		IOT_ERROR("INVAL conf for set_wifi_mode");
-		return -1;
+		return IOT_ERROR_CONN_OPERATE_FAIL;
 	}
 
 	switch (conf->mode) {
 	case IOT_WIFI_MODE_OFF:
 		ret = wifi_config_set_radio(0);
-		return ret;
+		if (ret < 0) {
+			IOT_ERROR("wifi_config_set_radio failed err=[%d]", ret);
+			return IOT_ERROR_CONN_OPERATE_FAIL;
+		}
+		break;
 	case IOT_WIFI_MODE_STATION:
-		wifi_set_sta(conf);
+		ret = wifi_set_sta(conf);
+		if (ret < 0) {
+			IOT_ERROR("set sta mode error");
+			return IOT_ERROR_CONN_OPERATE_FAIL;
+		} else if (ret > 0) {
+			IOT_ERROR("connect ap failed");
+			return IOT_ERROR_CONN_CONNECT_FAIL;
+		}
         time(&now);
         localtime_r(&now, &timeinfo);
-
         if (timeinfo.tm_year < (2016 - 1900)) {
-                IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
-                _obtain_time();
+			IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
+			_obtain_time();
         }
 		break;
 	case IOT_WIFI_MODE_SCAN:
 		ret = wifi_config_get_opmode(&prv_op_mode);
 		if (ret < 0) {
 			IOT_ERROR("MT7682 can't get curr WIFI mode");
-			return ret;
+			return IOT_ERROR_CONN_OPERATE_FAIL;
 		}
 		if (prv_op_mode != WIFI_MODE_STA_ONLY && prv_op_mode != WIFI_MODE_AP_ONLY) {
 			IOT_ERROR("set scan mode error");
-			return -1;
+			return IOT_ERROR_CONN_OPERATE_FAIL;
 		}else {
 			IOT_INFO("set scan mode success");
 			break;
 		}
 	case IOT_WIFI_MODE_SOFTAP:
-		wifi_set_ap(conf);
+		ret = wifi_set_ap(conf);
+		if (ret < 0) {
+			IOT_ERROR("set softap mode error");
+			return IOT_ERROR_CONN_OPERATE_FAIL;
+		}
 		break;
 	default:
 		IOT_ERROR("MT7682 can't support this mode:%d", conf->mode);
-		return -1;
+		return IOT_ERROR_CONN_OPERATE_FAIL;
 	}
 	return IOT_ERROR_NONE;
 }
@@ -380,9 +394,9 @@ iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac)
 {
 	iot_error_t ret;
 	ret = wifi_config_get_mac_address(WIFI_PORT_STA, wifi_mac->addr);
-	if(ret < 0){
+	if(ret < 0) {
 		IOT_ERROR("failed to read wifi mac address : %d", ret);
-		return IOT_ERROR_READ_FAIL;
+		return IOT_ERROR_CONN_OPERATE_FAIL;
 	}
 
 	IOT_DEBUG("MAC:%02X-%02X-%02X-%02X-%02X-%02X",
