@@ -1,6 +1,6 @@
 /* ***************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright (c) 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,34 @@
  *
  ****************************************************************************/
 
-#ifndef _IOT_NET_PLATFORM_H_
-#define _IOT_NET_PLATFORM_H_
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include "platform/mbed_rtc_time.h"
+#include "iot_bsp_system.h"
+#include "iot_debug.h"
 
-#include "mbedtls/platform.h"
-#include "mbedtls/net.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/certs.h"
-#include "mbedtls/x509.h"
+void iot_bsp_system_reboot()
+{
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct iot_net_platform_context {
-	mbedtls_net_context server_fd;
-
-	mbedtls_ssl_context ssl;
-	mbedtls_ssl_config conf;
-
-	mbedtls_entropy_context entropy;
-	mbedtls_ctr_drbg_context ctr_drbg;
-
-	mbedtls_x509_crt cacert;
-} iot_net_platform_context_t;
-
-#ifdef __cplusplus
 }
-#endif
-#endif /* _IOT_NET_PLATFORM_H_ */
+
+void iot_bsp_system_poweroff()
+{
+
+}
+
+iot_error_t iot_bsp_system_get_time_in_sec(char* buf, unsigned int buf_len)
+{
+        return IOT_ERROR_NONE;
+}
+
+iot_error_t iot_bsp_system_set_time_in_sec(const char* time_in_sec)
+{
+        return IOT_ERROR_NONE;
+}
+
+iot_error_t iot_bsp_system_get_uniqueid(unsigned char **uid, size_t *olen)
+{
+        return IOT_ERROR_NONE;
+}
