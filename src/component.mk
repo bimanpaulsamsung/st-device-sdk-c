@@ -32,6 +32,9 @@ else ifeq ($(CONFIG_STDK_IOT_CORE_BSP_SUPPORT_EMW3166),y)
 else ifeq ($(CONFIG_STDK_IOT_CORE_BSP_SUPPORT_EMW3080),y)
 	COMPONENT_SRCDIRS += port/bsp/emw3080
 	COMPONENT_ADD_INCLUDEDIRS += include/bsp/emw3080
+else ifeq ($(CONFIG_STDK_IOT_CORE_BSP_SUPPORT_TIZENRT),y)
+	COMPONENT_SRCDIRS += port/bsp/tizenrt
+	COMPONENT_ADD_INCLUDEDIRS += include/bsp/tizenrt
 else
 	COMPONENT_SRCDIRS += port/bsp/posix
 	COMPONENT_ADD_INCLUDEDIRS += include/bsp/posix
