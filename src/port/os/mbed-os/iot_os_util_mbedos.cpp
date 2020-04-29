@@ -26,14 +26,16 @@
 #include "cmsis_os2.h"
 #include "mbed.h"
 #include "MbedStdkQueue.h"
+#include "MbedLinkedList.h"
 #include "us_ticker_api.h"
 
 const unsigned int iot_os_max_delay = osWaitForever;
 const unsigned int iot_os_true = 1;
 const unsigned int iot_os_false = 0;
 
-/* TODO: try to use callback type from thread.h */
 typedef void (*callbackFN)(void *); /* define Thread callback function type */
+
+static MbedLinkedList threadlist;
 
 /* Thread */
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
@@ -48,15 +50,39 @@ int iot_os_thread_create(void * thread_function, const char* name, int stack_siz
 		return IOT_OS_FALSE;
 	}
 
+	threadlist.insert(thread);
+
 	if (thread_handle)
 		*thread_handle = thread;
 
 	return IOT_OS_TRUE;
 }
 
+static bool comp(void *loopdata, void *compdata)
+{
+	osThreadId_t tid = (osThreadId_t)compdata;
+	Thread *t = (Thread *)loopdata;
+
+	if (t->get_id() == tid)
+		return true;
+
+	return false;
+}
+
 void iot_os_thread_delete(iot_os_thread thread_handle)
 {
 	Thread *thread = (Thread *)thread_handle;
+
+	if (!thread) {
+		osThreadId_t tid = osThreadGetId();
+		linked_list_error_t ret  = threadlist.search(comp,
+				(void *)tid, (void **)&thread);
+		if (ret != LINKED_LIST_ERROR_NONE) {
+			IOT_ERROR("Invalid Thread!!!");
+			return;
+		}
+	}
+	threadlist.remove(thread);
 	delete thread;
 }
 
