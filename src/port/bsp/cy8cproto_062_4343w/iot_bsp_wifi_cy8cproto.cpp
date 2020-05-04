@@ -130,6 +130,10 @@ static int start_ap(char *wifi_ssid, char *wifi_password,
 	nsapi_error_t error_code;
 
 	_wifi = WhdSoftAPInterface::get_default_instance();
+	if (!_wifi) {
+		IOT_ERROR("ERROR: No WhdSoftAPInterface found.");
+		return -1;
+	}
 
 	if (ap_mode) {
 		IOT_WARN("AP mode Already UP");
@@ -153,13 +157,17 @@ static int stop_ap(void)
 	nsapi_error_t error_code;
 
 	_wifi = WhdSoftAPInterface::get_default_instance();
+	if (!_wifi) {
+		IOT_ERROR("ERROR: No WhdSoftAPInterface found.");
+		return -1;
+	}
 
 	if (!ap_mode) {
 		IOT_WARN("AP mode Already DOWN ");
 		return 0;
 	}
-	IOT_INFO("Stopping AP");
 
+	IOT_INFO("Stopping AP");
 	error_code = _wifi->stop();
 	IOT_ERROR_CHECK(error_code != NSAPI_ERROR_OK, -1, "Failed to Stop AP");
 
@@ -180,12 +188,16 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 
 		WiFiInterface *wifi;
 		wifi = WiFiInterface::get_default_instance();
+		if (!wifi) {
+			IOT_ERROR("ERROR: No WiFiInterface found.");
+			return IOT_ERROR_NET_INVALID_INTERFACE;
+		}
+
 		IOT_INFO("Scan:");
-
 		int count = wifi->scan(NULL,0);
-
 		if (count <= 0) {
 			IOT_ERROR("scan() failed with return value: %d", count);
+			return IOT_ERROR_CONNECT_FAIL;
 		}
 		break;
 	}
@@ -240,8 +252,12 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 	WiFiAccessPoint *ap;
 	WiFiInterface *wifi;
 	wifi = WiFiInterface::get_default_instance();
-	IOT_INFO("Scan:");
+	if (!wifi) {
+		IOT_ERROR("ERROR: No WiFiInterface found.");
+		return 0;
+	}
 
+	IOT_INFO("Scan:");
 	int count = wifi->scan(NULL,0);
 	if (count <= 0) {
 		IOT_ERROR("scan() failed with return value: %d", count);
