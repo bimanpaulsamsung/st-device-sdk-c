@@ -27,6 +27,9 @@
 #include "mbed.h"
 #include "MbedStdkQueue.h"
 #include "MbedLinkedList.h"
+#include <map>
+#include <iterator>
+#include <iostream>
 #include "us_ticker_api.h"
 
 const unsigned int iot_os_max_delay = osWaitForever;
@@ -36,6 +39,7 @@ const unsigned int iot_os_false = 0;
 typedef void (*callbackFN)(void *); /* define Thread callback function type */
 
 static MbedLinkedList threadlist;
+std::map<osThreadId_t, void *> mapOfWords;
 
 /* Thread */
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
@@ -51,6 +55,9 @@ int iot_os_thread_create(void * thread_function, const char* name, int stack_siz
 	}
 
 	threadlist.insert(thread);
+
+	osThreadId_t id = thread->get_id();
+	mapOfWords.insert(std::pair<osThreadId_t, void *>(id, (void *)thread));
 
 	if (thread_handle)
 		*thread_handle = thread;
@@ -77,12 +84,24 @@ void iot_os_thread_delete(iot_os_thread thread_handle)
 		osThreadId_t tid = osThreadGetId();
 		linked_list_error_t ret  = threadlist.search(comp,
 				(void *)tid, (void **)&thread);
+
+		std::map<osThreadId_t, void *>::iterator it = mapOfWords.find(tid);
+		if (it == mapOfWords.end()) {
+			IOT_ERROR("Invalid Thread!!!");
+		}
+
+		std::pair<osThreadId_t, void *> P = *it;
+		osThreadId_t thid= P.first;
+		Thread *th = (Thread *)P.second;
+
 		if (ret != LINKED_LIST_ERROR_NONE) {
 			IOT_ERROR("Invalid Thread!!!");
 			return;
 		}
 	}
 	threadlist.remove(thread);
+	osThreadId_t id = thread->get_id();
+	mapOfWords.erase(id);
 	delete thread;
 }
 
