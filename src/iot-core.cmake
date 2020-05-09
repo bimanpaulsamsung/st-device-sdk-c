@@ -33,6 +33,9 @@ if(CONFIG_STDK_IOT_CORE)
 	elseif(CONFIG_STDK_IOT_CORE_BSP_SUPPORT_EMW3080)
 		set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" port/bsp/emw3080)
 		set(COMPONENT_ADD_INCLUDEDIRS "${COMPONENT_ADD_INCLUDEDIRS}" include/bsp/emw3080)
+	elseif(CONFIG_STDK_IOT_CORE_BSP_SUPPORT_LPC54018)
+		set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" port/bsp/lpc54018)
+		set(COMPONENT_ADD_INCLUDEDIRS "${COMPONENT_ADD_INCLUDEDIRS}" include/bsp/lpc54018)
 	else()
 		set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" port/bsp/posix)
 		set(COMPONENT_ADD_INCLUDEDIRS "${COMPONENT_ADD_INCLUDEDIRS}" include/bsp/posix)
@@ -89,20 +92,21 @@ if(CONFIG_STDK_IOT_CORE)
 	file(GLOB ROOT_CA_FILE_LIST "${COMPONENT_PATH}/certs/root_ca_*.pem")
 	set(ROOT_CA_FILE ${COMPONENT_PATH}/certs/root_ca.pem)
 	set(ROOT_CA_SOURCE ${COMPONENT_PATH}/iot_root_ca.c)
+	add_custom_target(buildRootCA ALL)
 	add_custom_command(
-	        PRE_BUILD
-	        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${ROOT_CA_SOURCE}
-	        COMMENT "Generating root certiciate"
-	        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	        COMMAND if [ -e ${ROOT_CA_FILE} ] \; then rm ${ROOT_CA_FILE} \; fi \;
-	        COMMAND cat ${ROOT_CA_FILE_LIST} >> ${ROOT_CA_FILE}
-	        COMMAND cat ${BOILERPLATE_HEADER} > ${ROOT_CA_SOURCE}
-	        COMMAND xxd -i ${ROOT_CA_FILE} >> ${ROOT_CA_SOURCE}
-	        COMMAND sed -i.bak 's/cert.*_pem/st_root_ca/g' ${ROOT_CA_SOURCE}
-	        COMMAND sed -i.bak 's/unsigned/const unsigned/g' ${ROOT_CA_SOURCE}
-	        COMMAND rm -f ${ROOT_CA_SOURCE}.bak
-	        COMMAND rm -f ${ROOT_CA_FILE}
-	        BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/${ROOT_CA_SOURCE}
+			TARGET buildRootCA
+			PRE_BUILD
+			COMMENT "Generating root certificate"
+			WORKING_DIRECTORY ${COMPONENT_PATH}
+			COMMAND if [ -e ${ROOT_CA_FILE} ] \; then rm ${ROOT_CA_FILE} \; fi \;
+			COMMAND cat ${ROOT_CA_FILE_LIST} >> ${ROOT_CA_FILE}
+			COMMAND cat ${BOILERPLATE_HEADER} > ${ROOT_CA_SOURCE}
+			COMMAND xxd -i ${ROOT_CA_FILE} >> ${ROOT_CA_SOURCE}
+			COMMAND sed -i.bak 's/[^ ]*_pem/st_root_ca/g' ${ROOT_CA_SOURCE}
+			COMMAND sed -i.bak 's/unsigned/const unsigned/g' ${ROOT_CA_SOURCE}
+			COMMAND rm -f ${ROOT_CA_SOURCE}.bak
+			COMMAND rm -f ${ROOT_CA_FILE}
+			BYPRODUCTS ${ROOT_CA_SOURCE}
 	)
 
 	set(CMAKE_C_STANDARD 99)
