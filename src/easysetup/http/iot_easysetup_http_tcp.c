@@ -39,7 +39,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #endif
-#include "es_tcp_httpd.h"
+#include "easysetup_http.h"
 #include "iot_os_util.h"
 #include "iot_debug.h"
 #include "iot_easysetup.h"
@@ -191,13 +191,13 @@ static void es_tcp_task(void *pvParameters)
 }
 
 
-void es_tcp_init(void)
+void es_http_init(void)
 {
-	IOT_INFO("es_tcp_init!!");
-	iot_os_thread_create(es_tcp_task, "es_tcp_task", 4096, NULL, 5, (iot_os_thread * const)(&es_tcp_task_handle));
+	IOT_INFO("http tcp init!!");
+	iot_os_thread_create(es_tcp_task, "es_tcp_task", (1024 * 4), NULL, 5, (iot_os_thread * const)(&es_tcp_task_handle));
 }
 
-void es_tcp_deinit(void)
+void es_http_deinit(void)
 {
 	if (es_tcp_task_handle) {
 		iot_os_thread_delete(es_tcp_task_handle);
@@ -209,6 +209,6 @@ void es_tcp_deinit(void)
 		tx_buffer = NULL;
 	}
 
-	IOT_INFO("es_tcp_deinit!!");
+	IOT_INFO("http tcp deinit!!");
 }
 
