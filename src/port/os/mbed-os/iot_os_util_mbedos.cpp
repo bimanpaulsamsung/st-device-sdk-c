@@ -38,10 +38,29 @@ typedef void (*callbackFN)(void *); /* define Thread callback function type */
 static MbedLinkedList threadlist;
 
 /* Thread */
+static osPriority_t get_mbed_priority(int priority)
+{
+	switch (priority) {
+	case 0:
+		return osPriorityIdle;
+	case 1:
+		return osPriorityLow;
+	case 2:
+		return osPriorityBelowNormal;
+	case 3:
+		return osPriorityNormal;
+	case 4:
+		return osPriorityAboveNormal;
+	case 5:
+		return osPriorityHigh;
+	}
+	return osPriorityNone;
+}
+
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
 		void* data, int priority, iot_os_thread* thread_handle)
 {
-	Thread *thread = new Thread(osPriorityNormal, stack_size, nullptr, name);
+	Thread *thread = new Thread(get_mbed_priority(priority), stack_size, nullptr, name);
 	IOT_ERROR_CHECK(!thread, IOT_OS_FALSE, "Memory allocation Failed!!!");
 
 	osStatus status = thread->start(callback((callbackFN)thread_function, data));
