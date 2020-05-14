@@ -624,7 +624,7 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	if ((recv = JSON_GET_OBJECT_ITEM(root, "datetime")) == NULL) {
 		IOT_INFO("no datetime info");
 		err  = IOT_ERROR_EASYSETUP_INVALID_REQUEST;
-		goto exit_secret;
+		goto temp_exit;
 	}
 	p_datetime_str = (unsigned char *)JSON_GET_STRING_VALUE(recv);
 
@@ -708,7 +708,10 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 		err = IOT_ERROR_EASYSETUP_BASE64_DECODE_ERROR;
 		goto exit_secret;
 	}
-	IOT_DEBUG("timezoneid = %s", decode_buf);
+
+	IOT_DEBUG("timezoneid = %s", decode_buf); // TODO: where to store
+
+temp_exit:// TODO: once app is published with time info feature, it should be deleted.
 
 	JSON_DELETE(root);
 
