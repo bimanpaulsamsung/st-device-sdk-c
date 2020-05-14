@@ -84,6 +84,12 @@ ifdef CONFIG_STDK_IOT_CORE_EASYSETUP_POSIX_TESTING
 COMPONENT_SRCDIRS += easysetup/posix_testing
 endif
 
+ifdef CONFIG_STDK_IOT_CORE_EASYSETUP_X509
+COMPONENT_OBJEXCLUDE := easysetup/http/iot_easysetup_http_tcp.o
+else
+COMPONENT_OBJEXCLUDE := easysetup/http/iot_easysetup_http_tls.o
+endif
+
 CPPFLAGS += -include $(COMPONENT_PATH)/include/iot_common.h
 
 COMPONENT_SRCDIRS += mqtt/client mqtt/packet mqtt/client/freertos
