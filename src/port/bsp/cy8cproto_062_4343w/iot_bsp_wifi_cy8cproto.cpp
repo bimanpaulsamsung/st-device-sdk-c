@@ -193,7 +193,7 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 		int count = wifi->scan(NULL,0);
 		if (count <= 0) {
 			IOT_ERROR("scan() failed with return value: %d", count);
-			return IOT_ERROR_CONNECT_FAIL;
+			return IOT_ERROR_CONN_OPERATE_FAIL;
 		}
 		break;
 	}
@@ -203,7 +203,7 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 		IOT_INFO("Start STA mode");
 		if (connect_to_ap(conf->ssid, conf->pass) < 0) {
 			IOT_ERROR("Could not connect to %s", conf->ssid);
-			return IOT_ERROR_CONNECT_FAIL;
+			return IOT_ERROR_CONN_CONNECT_FAIL;
 		}
 
 		IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
@@ -212,13 +212,13 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 	}
 	case IOT_WIFI_MODE_SOFTAP: {
 		if (start_ap(conf->ssid, conf->pass) < 0)
-			return IOT_ERROR_CONNECT_FAIL;
+			return IOT_ERROR_CONN_OPERATE_FAIL;
 
 		break;
 	}
 	default:
 		IOT_ERROR("iot bsp wifi can't support this mode = %d", conf->mode);
-		return IOT_ERROR_INIT_FAIL;
+		return IOT_ERROR_CONN_OPERATE_FAIL;
 	}
 
 	return IOT_ERROR_NONE;
