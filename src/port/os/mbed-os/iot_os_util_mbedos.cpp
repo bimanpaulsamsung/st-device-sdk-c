@@ -248,9 +248,7 @@ void iot_os_delay(unsigned int delay_ms)
 
 static unsigned int xTaskGetTickCount(void)
 {
-	const ticker_info_t *ticker_info = us_ticker_get_info();
-	uint32_t tick = us_ticker_read();
-	return (int)(tick * ((float)1000 / ticker_info->frequency)); // TICK in milliseconds
+	return (int)rtos::Kernel::get_ms_count(); // TICK in milliseconds
 }
 
 static void vTaskSetTimeOutState(unsigned int *mstime)
