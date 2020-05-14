@@ -30,8 +30,11 @@ static struct iot_context *context;
 static const char http_status_200[] = "HTTP/1.1 200 OK";
 static const char http_status_400[] = "HTTP/1.1 400 Bad Request";
 static const char http_status_500[] = "HTTP/1.1 500 Internal Server Error";
+#if defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
+static const char http_header[] = "\r\nServer: SmartThings Device SDK\r\nConnection: keep-alive\r\nContent-Type: application/json\r\nContent-Length: ";
+#else
 static const char http_header[] = "\r\nServer: SmartThings Device SDK\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: ";
-
+#endif
 #define MAX_PAYLOAD_LENGTH	1024
 #define ARRAY_SIZE(x) (int)(sizeof(x)/sizeof(x[0]))
 
