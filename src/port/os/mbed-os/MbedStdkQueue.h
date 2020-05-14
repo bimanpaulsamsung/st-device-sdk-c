@@ -63,7 +63,10 @@ public:
     MbedStdkQueue(unsigned int size, int itemsize)
     {
         queue_sz = size;
-        _queue_mem = (char *)malloc(queue_sz * (itemsize +
+        /* rtx rtos' implementation of 'osMessageQueueNew' requested
+         * pre-allocated mq_mem to be 4 byte-aligned, otherwise queue
+         * new will fail. */
+        _queue_mem = (char *)malloc(queue_sz * (((itemsize + 3U) & ~3UL) +
                 sizeof(mbed_rtos_storage_message_t)));
         osMessageQueueAttr_t attr = { 0 };
         attr.mq_mem = _queue_mem;
