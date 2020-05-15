@@ -30,5 +30,8 @@
             "macro_name": "CONFIG_STDK_IOT_CORE_LOG_LEVEL_WARN",
             "value": true
         }
-    }
+    },
+    "macros": [
+	    "MBED_HEAP_STATS_ENABLED=1"
+    ]
 }
