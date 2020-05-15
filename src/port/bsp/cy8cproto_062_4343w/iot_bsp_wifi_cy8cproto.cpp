@@ -108,7 +108,9 @@ static int connect_to_ap(char *wifi_ssid, char *wifi_password,
 	}
 
 	IOT_INFO("Success");
-	IOT_INFO("IP: %s", wifi->get_ip_address());
+	SocketAddress wifi_ip_address;
+	wifi->get_ip_address(&wifi_ip_address);
+	IOT_DEBUG("IP: %s", wifi_ip_address.get_ip_address());
 	IOT_DEBUG("MAC: %s", wifi->get_mac_address());
 	IOT_DEBUG("Netmask: %s", wifi->get_netmask());
 	IOT_DEBUG("Gateway: %s", wifi->get_gateway());
@@ -134,7 +136,10 @@ static int start_ap(char *wifi_ssid, char *wifi_password,
 	}
 
 	IOT_INFO("Starting AP...");
-	_wifi->set_network(IOT_STDK_AP_IP, IOT_STDK_AP_NETMASK, IOT_STDK_AP_GATEWAY);
+	SocketAddress ipAddress(IOT_STDK_AP_IP);
+	SocketAddress netmask(IOT_STDK_AP_NETMASK);
+	SocketAddress gateway(IOT_STDK_AP_GATEWAY);
+	_wifi->set_network(ipAddress, netmask, gateway);
 	error_code = _wifi->start(wifi_ssid, wifi_password, security, IOT_STDK_AP_CHANNEL,
 			true, NULL, false);
 	IOT_ERROR_CHECK(error_code != NSAPI_ERROR_OK, -1, "Failed to Start AP");
