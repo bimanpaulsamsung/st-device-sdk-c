@@ -32,7 +32,7 @@
 
 #define RAND_TEST_COUNT (10)
 
-void CTS_iot_bsp_random_verify_randomness(void **state)
+void CTS_iot_bsp_random_RANDOMNESS(void **state)
 {
     unsigned int random_result[10];
     int i, j;
@@ -50,7 +50,7 @@ void CTS_iot_bsp_random_verify_randomness(void **state)
     }
 }
 
-void CTS_iot_bsp_system_get_uniqueid_verify_consistency(void **state)
+void CTS_iot_bsp_system_get_uniqueid_CONSISTENCY(void **state)
 {
     iot_error_t err1, err2;
     unsigned char *unique_id_1;
@@ -75,7 +75,7 @@ void CTS_iot_bsp_system_get_uniqueid_verify_consistency(void **state)
     free(unique_id_2);
 }
 
-void CTS_iot_bsp_wifi_get_mac_verify_consistency(void** state)
+void CTS_iot_bsp_wifi_get_mac_CONSISTENCY(void** state)
 {
     iot_error_t err_1, err_2;
     struct iot_mac iotmac_1;
@@ -95,7 +95,7 @@ void CTS_iot_bsp_wifi_get_mac_verify_consistency(void** state)
     assert_memory_equal(&iotmac_1, &iotmac_2, sizeof(struct iot_mac));
 }
 
-void CTS_iot_bsp_nv_get_data_path(void** state)
+void CTS_iot_bsp_nv_get_data_path_EXISTENCE(void** state)
 {
     for (int i = IOT_NVD_WIFI_PROV_STATUS; i < IOT_NVD_MAX; i++) {
         assert_non_null(iot_bsp_nv_get_data_path(i));
@@ -105,10 +105,10 @@ void CTS_iot_bsp_nv_get_data_path(void** state)
 int CTS_iot_bsp_test()
 {
     const struct CMUnitTest CTS_iot_bsp_api[] = {
-            cmocka_unit_test(CTS_iot_bsp_random_verify_randomness),
-            cmocka_unit_test(CTS_iot_bsp_system_get_uniqueid_verify_consistency),
-            cmocka_unit_test(CTS_iot_bsp_wifi_get_mac_verify_consistency),
-            cmocka_unit_test(CTS_iot_bsp_nv_get_data_path),
+            cmocka_unit_test(CTS_iot_bsp_random_RANDOMNESS),
+            cmocka_unit_test(CTS_iot_bsp_system_get_uniqueid_CONSISTENCY),
+            cmocka_unit_test(CTS_iot_bsp_wifi_get_mac_CONSISTENCY),
+            cmocka_unit_test(CTS_iot_bsp_nv_get_data_path_EXISTENCE),
     };
 
     return cmocka_run_group_tests_name("iot_bsp", CTS_iot_bsp_api, NULL, NULL);

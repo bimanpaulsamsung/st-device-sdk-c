@@ -24,7 +24,8 @@ extern "C" {
 #include <stdio.h>
 
 int CTS_iot_bsp_test();
-int CTS_iot_os_test();
+int CTS_iot_os_queue_test();
+int CTS_iot_os_eventgroup_test();
 
 #ifdef __cplusplus
 }
