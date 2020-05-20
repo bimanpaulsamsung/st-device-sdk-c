@@ -702,15 +702,6 @@ temp_exit:// TODO: once app is published with time info feature, it should be de
 
 	*out_payload = final_msg;
 exit_secret:
-	if (p_datetime_str) {
-		free(p_datetime_str);
-	}
-	if (p_regionaldatetime_str) {
-		free(p_regionaldatetime_str);
-	}
-	if (p_timezoneid_str) {
-		free(p_timezoneid_str);
-	}
 #if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	if (decode_buf) {
 		free(decode_buf);
