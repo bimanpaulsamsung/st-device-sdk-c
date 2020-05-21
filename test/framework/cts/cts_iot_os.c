@@ -173,6 +173,48 @@ void CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_MULTI_BITS(void** st
 
 // This test purposed to test return value and event clearance
 // Given: single bit is set to bits_to_set
+// When: wait with wait_for_all_bits enabled, but clear_on_exit disabled to make timeout
+// Then: return bits_to_set and all events cleared
+void CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_FOR_ALL_BITS_TIMEOUT(void** state)
+{
+    iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
+    unsigned int result = 0;
+
+    // Given: set bit 0
+    result = iot_os_eventgroup_set_bits(event_group, BIT_0);
+    assert_int_equal(result, BIT_0);
+    // When: wait until any of bit 0, 3 set
+    result = iot_os_eventgroup_wait_bits(event_group, BIT_0 | BIT_3, 0, 1, 5);
+    // Then: get bit 0
+    assert_int_equal(result, BIT_0);
+    // Teardown
+    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
+    assert_int_equal(result, BIT_0);
+}
+
+// This test purposed to test return value and event clearance
+// Given: single bit is set to bits_to_set
+// When: wait with wait_for_all_bits, clear_on_exit enabled to make timeout
+// Then: return bits_to_set and all events cleared
+void CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_WAIT_FOR_ALL_BITS_TIMEOUT(void** state)
+{
+    iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
+    unsigned int result = 0;
+
+    // Given: set bit 0
+    result = iot_os_eventgroup_set_bits(event_group, BIT_0);
+    assert_int_equal(result, BIT_0);
+    // When: wait until any of bit 0, 3 set
+    result = iot_os_eventgroup_wait_bits(event_group, BIT_0 | BIT_3, 1, 1, 5);
+    // Then: get bit 0
+    assert_int_equal(result, BIT_0);
+    // Teardown
+    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
+    assert_int_equal(result, BIT_0);
+}
+
+// This test purposed to test return value and event clearance
+// Given: single bit is set to bits_to_set
 // When: wait any bits with clear_on_exit option
 // Then: return bits_to_set and all events cleared
 void CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_ANY_BITS_WAIT(void** state)
@@ -249,6 +291,8 @@ int CTS_iot_os_eventgroup_test()
             cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_SINGLE_BIT_WAIT),
             cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_MULTI_BITS_WAIT),
             cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_SINGLE_BIT_WAIT),
+            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_FOR_ALL_BITS_TIMEOUT),
+            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_WAIT_FOR_ALL_BITS_TIMEOUT),
             cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_MULTI_BITS),
             cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_ANY_BITS_WAIT),
             cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_ALL_BITS),
