@@ -1,31 +1,20 @@
-/******************************************************************
+/* ***************************************************************************
  *
- * MIT License
+ * Copyright 2020 Samsung Electronics All Rights Reserved.
  *
- * Copyright (c) 2019 Aleksey Kurepin
- * Copyright (c) 2020 Samsung Electronics All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * http message parser has come from Pico HTTP Server (https://github.com/foxweb/pico)
- *
- ******************************************************************/
+ ****************************************************************************/
  
 #include <string.h>
 #include <sys/socket.h>
@@ -133,15 +122,6 @@ const size_t mbedtls_stdk_cert_len = sizeof(mbedtls_stdk_cert);
 const char mbedtls_stdk_private_key[] = STDK_RSA_PRIVATE_KEY;
 const size_t mbedtls_stdk_private_key_len = sizeof(mbedtls_stdk_private_key);
 
-char *method, // "GET" or "POST"
-	*uri,     // "/index.html" things before '?'
-	*qs,      // "a=1&b=2"     things after  '?'
-	*prot;    // "HTTP/1.1"
-
-typedef struct { char *name, *value; } header_t;
-
-static header_t reqhdr[17] = {{"\0", "\0"}};
-
 static char *tx_buffer = NULL;
 
 static mbedtls_net_context listen_fd, client_fd;
@@ -190,8 +170,9 @@ static void es_mbedtls_task(void *data)
 	char buf[2048];
 	char *payload = NULL;
 	const char *pers = "easysetup";
-	int ret, len;
+	int ret, len, type, cmd;
 	int handshake_done = 0;
+	iot_error_t err = IOT_ERROR_NONE;
 
 	mbedtls_net_init(&listen_fd);
 	mbedtls_net_init(&client_fd);
@@ -344,49 +325,17 @@ static void es_mbedtls_task(void *data)
 
 		buf[len] = '\0';
 
-		method = strtok(buf, " \t\r\n");
-		uri = strtok(NULL, " \t");
-		prot = strtok(NULL, " \t\r\n");
-
-		header_t *h = reqhdr;
-		char *t = NULL;
-
-		while (h < reqhdr + 16) {
-		  char *k, *v;
-
-		  k = strtok(NULL, "\r\n: \t");
-		  if (!k)
-			break;
-
-		  v = strtok(NULL, "\r\n");
-		  while (*v && *v == ' ')
-			v++;
-
-		  h->name = k;
-		  h->value = v;
-		  h++;
-
-		  t = v + 1 + strlen(v);
-
-		  if (t[1] == '\r' && t[2] == '\n')
-			break;
-		}
-
-		t++;
-		payload = t;
-
-		if (!strcmp(method,  "GET"))
-			http_packet_handle(uri, &tx_buffer, payload, D2D_GET);
-		else if (!strcmp(method,  "POST"))
-			http_packet_handle(uri, &tx_buffer, payload, D2D_POST);
-		else {
-			IOT_ERROR("not support type");
-			http_packet_handle("ERROR", &tx_buffer, payload, D2D_ERROR);
-		}
+		err = es_msg_parser(buf, &payload, &cmd, &type);
+		if(err == IOT_ERROR_INVALID_ARGS)
+			http_msg_handler(cmd, &tx_buffer, D2D_ERROR, payload);
+		else
+			http_msg_handler(cmd, &tx_buffer, type, payload);
 
 		/*
 		 * 7. Send the Response
 		 */
+		memset(buf, 0, sizeof(buf));
+
 		len = sprintf(buf, tx_buffer,
 					   mbedtls_ssl_get_ciphersuite(&ssl));
 
