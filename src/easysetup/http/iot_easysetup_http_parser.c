@@ -35,7 +35,7 @@ typedef struct { char *name, *value; } header_t;
 
 static header_t reqhdr[17] = {{"\0", "\0"}};
 
-iot_error_t es_msg_parser(char *rx_buffer, char **payload, int *cmd, int *type)
+iot_error_t es_msg_parser(char *rx_buffer, char **payload, int *cmd, int *type, int *content_len)
 {
 	// Client request
 	char *method = NULL; // "GET" or "POST"
@@ -74,6 +74,10 @@ iot_error_t es_msg_parser(char *rx_buffer, char **payload, int *cmd, int *type)
 
 		h->name = k;
 		h->value = v;
+
+		if (!strcmp(h->name,  "Content-Length"))
+			*content_len = atoi(h->value);
+
 		h++;
 
 		t = v + 1 + strlen(v);
@@ -83,7 +87,7 @@ iot_error_t es_msg_parser(char *rx_buffer, char **payload, int *cmd, int *type)
 	}
 
 	t++;
-	*payload = t;
+	*payload = t + 2;
 
 	if (!strcmp(method,  "GET")) {
 		*type = D2D_GET;

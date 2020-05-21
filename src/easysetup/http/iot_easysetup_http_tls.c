@@ -170,7 +170,7 @@ static void es_mbedtls_task(void *data)
 	char buf[2048];
 	char *payload = NULL;
 	const char *pers = "easysetup";
-	int ret, len, type, cmd;
+	int ret, len, type, cmd, content_len;
 	int handshake_done = 0;
 	iot_error_t err = IOT_ERROR_NONE;
 
@@ -260,6 +260,8 @@ static void es_mbedtls_task(void *data)
 
 		mbedtls_ssl_session_reset(&ssl);
 
+		content_len = 0;
+
 		if ((ret = mbedtls_net_accept(&listen_fd, &client_fd, NULL, 0, NULL)) != 0)
 		{
 			if (close_connection == true) {
@@ -318,14 +320,23 @@ static void es_mbedtls_task(void *data)
 
 			len = ret;
 
-			if (ret > 0)
-				break;
+			if (ret > 0) {
+				buf[len] = '\0';
+
+				if (content_len) {
+					payload = buf;
+					break;
+				} else {
+					err = es_msg_parser(buf, &payload, &cmd, &type, &content_len);
+					if ((content_len > 0) && (content_len != strlen((char *)payload)))
+						continue;
+					else
+						break;
+				}
+			}
 		}
 		while (1);
 
-		buf[len] = '\0';
-
-		err = es_msg_parser(buf, &payload, &cmd, &type);
 		if(err == IOT_ERROR_INVALID_ARGS)
 			http_msg_handler(cmd, &tx_buffer, D2D_ERROR, payload);
 		else
