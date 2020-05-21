@@ -27,7 +27,8 @@ int main(void)
     int err = 0;
 
     err += CTS_iot_bsp_test();
-    err += CTS_iot_os_test();
+    err += CTS_iot_os_queue_test();
+    err += CTS_iot_os_eventgroup_test();
 
     return err;
 }
