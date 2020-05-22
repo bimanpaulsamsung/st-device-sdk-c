@@ -170,7 +170,7 @@ static void es_mbedtls_task(void *data)
 	char buf[2048];
 	char *payload = NULL;
 	const char *pers = "easysetup";
-	int ret, len, type, cmd, content_len;
+	int ret, len, type, cmd;
 	int handshake_done = 0;
 	iot_error_t err = IOT_ERROR_NONE;
 	size_t content_len;
@@ -322,8 +322,6 @@ static void es_mbedtls_task(void *data)
 			len = ret;
 
 			if (ret > 0) {
-				buf[len] = '\0';
-
 				if (content_len > 0) {
 					payload = buf;
 					break;
