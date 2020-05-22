@@ -84,6 +84,12 @@ if(CONFIG_STDK_IOT_CORE)
 		set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" easysetup/posix_testing)
 	endif()
 
+	if(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
+		set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" easysetup/http/tls)
+	else()
+		set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" easysetup/http/tcp)
+	endif()
+
 	include_directories(${COMPONENT_PATH}/include/iot_common.h)
 
 	set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" mqtt/client mqtt/packet mqtt/client/freertos)
