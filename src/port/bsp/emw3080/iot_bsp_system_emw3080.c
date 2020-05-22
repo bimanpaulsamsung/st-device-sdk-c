@@ -47,7 +47,7 @@ iot_error_t iot_bsp_system_set_time_in_sec(const char* time_in_sec)
 	uint32_t current_time_s;
 
 	sscanf(time_in_sec, "%ld", &current_time_s);
-	current_utc_time_ms = current_time_s * 1000;
+	current_utc_time_ms = (mico_utc_time_ms_t)current_time_s * 1000;
 
 	mico_time_set_utc_time_ms(&current_utc_time_ms);
 
