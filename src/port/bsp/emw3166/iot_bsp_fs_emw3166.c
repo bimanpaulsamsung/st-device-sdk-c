@@ -169,7 +169,7 @@ iot_error_t iot_bsp_fs_open(const char* filename, iot_bsp_fs_open_mode_t mode, i
 	return IOT_ERROR_NONE;
 }
 
-iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, unsigned int length)
+iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, size_t *length)
 {
 	iot_error_t ret = IOT_ERROR_NONE;
 	OSStatus err = kNoErr;
@@ -187,8 +187,9 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, unsigned i
 	err = mico_filesystem_file_read(fh, data, fh->data.fatfs.fsize, &bytesread);
 	if (err == kNoErr) {
 		IOT_INFO("fs read success, %u bytes", bytesread);
-		bytesread = (length < bytesread)? length : bytesread;
+		bytesread = (*length < bytesread)? *length : bytesread;
 		memcpy(buffer, data, bytesread);
+		*length = bytesread;
 	} else {
 		IOT_ERROR("mico fs ret %d, read bytes %d", err, bytesread);
 		ret = IOT_ERROR_FS_READ_FAIL;
@@ -199,7 +200,7 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, unsigned i
 	return ret;
 }
 
-iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char* data, unsigned int length)
+iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char* data, size_t length)
 {
 	mico_file_t *fh;
 	OSStatus err = kNoErr;

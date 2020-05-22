@@ -126,14 +126,16 @@ static iot_error_t _iot_wifi_set_softap(iot_wifi_conf *conf)
 	OSStatus err = kNoErr;
 	network_InitTypeDef_st net_config;
 
-	if ((strlen(conf->ssid) >= sizeof(net_config.wifi_ssid)) || (strlen(conf->pass) >= sizeof(net_config.wifi_key))) {
-		IOT_ERROR("too long ssid or password to set driver");
+	if (strlen(conf->pass) >= sizeof(net_config.wifi_key)) {
+		IOT_ERROR("too long password to set driver");
 		return IOT_ERROR_INVALID_ARGS;
 	}
 
 	memset(&net_config, 0x0, sizeof(network_InitTypeDef_st));
 
-	strcpy((char*)net_config.wifi_ssid, conf->ssid);
+	/*max strlen of conf->ssid maybe 32, need to copy all of them to net_config,
+	  driver could work with no null terminate, and APP rely on this full string*/
+	strncpy((char*)net_config.wifi_ssid, conf->ssid, sizeof(net_config.wifi_ssid));
 	strcpy((char*)net_config.wifi_key, conf->pass);
 	net_config.wifi_mode = Soft_AP;
 	net_config.dhcpMode = DHCP_Server;
