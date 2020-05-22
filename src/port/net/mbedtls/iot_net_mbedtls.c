@@ -21,11 +21,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/time.h>
-#if defined(CONFIG_STDK_IOT_CORE_OS_SUPPORT_MOCOS)
-#include "mico_socket.h"
-#else
 #include <sys/socket.h>
-#endif
 
 #include "iot_main.h"
 #include "iot_debug.h"
