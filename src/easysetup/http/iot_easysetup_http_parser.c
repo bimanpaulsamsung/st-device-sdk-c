@@ -35,7 +35,7 @@ typedef struct { char *name, *value; } header_t;
 
 static header_t reqhdr[17] = {{"\0", "\0"}};
 
-iot_error_t es_msg_parser(char *rx_buffer, char **payload, int *cmd, int *type, int *content_len)
+iot_error_t es_msg_parser(char *rx_buffer, char **payload, int *cmd, int *type, size_t *content_len)
 {
 	// Client request
 	char *method = NULL; // "GET" or "POST"

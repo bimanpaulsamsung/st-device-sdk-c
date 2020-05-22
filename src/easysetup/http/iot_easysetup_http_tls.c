@@ -173,6 +173,7 @@ static void es_mbedtls_task(void *data)
 	int ret, len, type, cmd, content_len;
 	int handshake_done = 0;
 	iot_error_t err = IOT_ERROR_NONE;
+	size_t content_len;
 
 	mbedtls_net_init(&listen_fd);
 	mbedtls_net_init(&client_fd);
@@ -323,12 +324,12 @@ static void es_mbedtls_task(void *data)
 			if (ret > 0) {
 				buf[len] = '\0';
 
-				if (content_len) {
+				if (content_len > 0) {
 					payload = buf;
 					break;
 				} else {
 					err = es_msg_parser(buf, &payload, &cmd, &type, &content_len);
-					if ((content_len > 0) && (content_len != strlen((char *)payload)))
+					if ((err == IOT_ERROR_NONE) && (content_len > strlen((char *)payload)))
 						continue;
 					else
 						break;
