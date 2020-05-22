@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 
+#include <stdlib.h>
 #include "iot_bsp_fs.h"
 #include "iot_bsp_nv_data.h"
 #include "iot_debug.h"
@@ -166,13 +167,13 @@ iot_error_t iot_bsp_fs_open_from_stnv(const char* filename, iot_bsp_fs_handle_t*
 	return iot_bsp_fs_open(filename, FS_READONLY, handle);
 }
 
-iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, unsigned int length)
+iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, size_t *length)
 {
 	iot_error_t ret = IOT_ERROR_NONE;
 	unsigned int bytesread = 0;
 	char *rdata = NULL;
 
-	if (!buffer || length == 0 || length > STDK_NV_SECTOR_SIZE)
+	if (!buffer || *length == 0 || *length > STDK_NV_SECTOR_SIZE)
 		return IOT_ERROR_FS_READ_FAIL;
 
 	nv_storage_init();
@@ -182,14 +183,15 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, unsigned i
 		ret = IOT_ERROR_FS_READ_FAIL;
 	} else {
 		IOT_INFO("mflash read  %s success", handle.filename);
-		bytesread = (length < bytesread)? length : bytesread;
+		bytesread = (*length < bytesread)? *length : bytesread;
 		memcpy(buffer, rdata, bytesread);
+		*length = bytesread;
 	}
 	device_mutex_unlock();
 	return ret;
 }
 
-iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, unsigned int length)
+iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, size_t length)
 {
 	iot_error_t ret = IOT_ERROR_NONE;
 
