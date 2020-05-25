@@ -92,7 +92,7 @@ if(CONFIG_STDK_IOT_CORE)
 
 	include_directories(${COMPONENT_PATH}/include/iot_common.h)
 
-	set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" mqtt/client mqtt/packet mqtt/client/freertos)
+	set(COMPONENT_SRCDIRS "${COMPONENT_SRCDIRS}" mqtt/client mqtt/packet)
 
 	set(BOILERPLATE_HEADER ${COMPONENT_PATH}/include/certs/boilerplate.h)
 	file(GLOB ROOT_CA_FILE_LIST "${COMPONENT_PATH}/certs/root_ca_*.pem")

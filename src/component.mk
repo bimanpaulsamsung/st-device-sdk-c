@@ -97,7 +97,7 @@ endif
 
 CPPFLAGS += -include $(COMPONENT_PATH)/include/iot_common.h
 
-COMPONENT_SRCDIRS += mqtt/client mqtt/packet mqtt/client/freertos
+COMPONENT_SRCDIRS += mqtt/client mqtt/packet
 
 BILERPLATE_HEADER=$(COMPONENT_PATH)/include/certs/boilerplate.h
 ROOT_CA_FILE_LIST=$(wildcard $(COMPONENT_PATH)/certs/root_ca_*.pem)
