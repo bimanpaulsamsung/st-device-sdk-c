@@ -199,13 +199,13 @@ iot_error_t _iot_easysetup_gen_post_payload(struct iot_context *ctx, int cmd, ch
 		   if ((ref_step == IOT_EASYSETUP_STEP_CONFIRM) || (ref_step == IOT_EASYSETUP_STEP_CONFIRMINFO))
 			   ref_step = IOT_EASYSETUP_STEP_WIFIPROVIONINGINFO;
 		   else {
-			   err = IOT_ERROR_EASYSETUP_INVALID_CMD;
-			   IOT_ERROR("Invalid command step %d", cmd);
+			   err = IOT_ERROR_EASYSETUP_INVALID_SEQUENCE;
+			   IOT_ERROR("Invalid command sequence %d", cmd);
 			   goto post_exit;
 		   }
 		} else {
-			err = IOT_ERROR_EASYSETUP_INVALID_CMD;
-			IOT_ERROR("Invalid command step %d", cmd);
+			err = IOT_ERROR_EASYSETUP_INVALID_SEQUENCE;
+			IOT_ERROR("Invalid command sequence %d", cmd);
 			goto post_exit;
 		}
 	}
