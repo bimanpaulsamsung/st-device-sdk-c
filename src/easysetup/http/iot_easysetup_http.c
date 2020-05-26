@@ -301,8 +301,6 @@ void http_msg_handler(int cmd, char **buffer, enum cgi_type type, char* data_buf
 				snprintf(buf, buffer_len, "%s%s%4d\r\n\r\n%s",
 						http_status_200, http_header, (int)strlen(payload), payload);
 				IOT_INFO("post cmd[%d] ok", cmd);
-			} else if (err == IOT_ERROR_EASYSETUP_INVALID_CMD) {
-				goto cgi_out;
 			} else {
 				IOT_INFO("post cmd[%d] not ok", cmd);
 			}
@@ -318,8 +316,6 @@ void http_msg_handler(int cmd, char **buffer, enum cgi_type type, char* data_buf
 			snprintf(buf, buffer_len, "%s%s%4d\r\n\r\n%s",
 						http_status_200, http_header, (int)strlen(payload), payload);
 			IOT_INFO("get cmd[%d] ok", cmd);
-		} else if (err == IOT_ERROR_EASYSETUP_INVALID_CMD) {
-			goto cgi_out;
 		} else {
 			IOT_INFO("get cmd[%d] not ok", cmd);
 		}
