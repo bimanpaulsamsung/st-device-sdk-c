@@ -29,7 +29,7 @@ typedef struct nv_item_table
 	size_t addr;
 } nv_item_table_s;
 
-#define MAX_NV_ITEM_CNT				 19
+#define MAX_NV_ITEM_CNT				20
 
 #define STDK_NV_SECTOR_SIZE            (0x1000)
 

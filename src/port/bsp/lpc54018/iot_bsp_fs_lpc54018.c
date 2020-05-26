@@ -24,7 +24,7 @@
 #include "semphr.h"
 #include "mflash_file.h"
 
-#define MAX_NV_ITEM_CNT		20
+#define MAX_NV_ITEM_CNT		21
 #define STDK_NV_SECTOR_SIZE		(0x1000)
 #define NV_BASE_ADDRESS		(0x10100000)
 
@@ -44,8 +44,9 @@ mflash_file_t nv_table[MAX_NV_ITEM_CNT] = {
 	{.path = "PrivateKey",		.max_size = STDK_NV_SECTOR_SIZE},  // PrivateKey
 	{.path = "PublicKey",		.max_size = STDK_NV_SECTOR_SIZE},  // PublicKey
 	{.path = "PKType",		.max_size = STDK_NV_SECTOR_SIZE},  // PKType
-	{.path = "CACert",		.max_size = STDK_NV_SECTOR_SIZE},  // CACert
+	{.path = "RootCert",		.max_size = STDK_NV_SECTOR_SIZE},  // RootCert
 	{.path = "SubCert",		.max_size = STDK_NV_SECTOR_SIZE},  // SubCert
+	{.path = "DeviceCert",		.max_size = STDK_NV_SECTOR_SIZE},  // DeviceCert
 	{.path = "ClaimID",		.max_size = STDK_NV_SECTOR_SIZE},  // ClaimID
 	{.path = "SerialNum",		.max_size = STDK_NV_SECTOR_SIZE},  // SerialNum
 	{0,} //last item must be 0 for driver to check the end

@@ -71,7 +71,7 @@ typedef struct nv_item_table
 #define ALIGNUP(x, y)                 ((((x) + ((y) - 1)) / (y)) * (y))
 
 #define MAX_APP_DATA_SIZE (2048)
-#define MAX_NV_ITEM_CNT				 19
+#define MAX_NV_ITEM_CNT				20
 
 #define OP_OK		1
 #define OP_FAIL	-1
