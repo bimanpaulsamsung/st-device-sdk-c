@@ -100,8 +100,8 @@ static void es_tcp_task(void *pvParameters)
 			sock = accept(listen_sock, (struct sockaddr *)&sourceAddr, &addrLen);
 			if (sock < 0) {
 				if (!deinit_processing) {
-				IOT_ERROR("Unable to accept connection: errno %d", errno);
-				IOT_ES_DUMP(IOT_DEBUG_LEVEL_ERROR, IOT_DUMP_EASYSETUP_SOCKET_ACCEPT_FAIL, errno);
+					IOT_ERROR("Unable to accept connection: errno %d", errno);
+					IOT_ES_DUMP(IOT_DEBUG_LEVEL_ERROR, IOT_DUMP_EASYSETUP_SOCKET_ACCEPT_FAIL, errno);
 				}
 				break;
 			}
