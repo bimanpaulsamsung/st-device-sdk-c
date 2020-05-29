@@ -91,11 +91,8 @@ iot_error_t iot_easysetup_create_ssid(struct iot_devconf_prov_data *devconf, cha
 				last_sn[0], last_sn[1],
 				last_sn[2], last_sn[3]);
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	setup_type = 6;
-#else
-	setup_type = 7;
-#endif
+
 	snprintf(ssid_build, sizeof(ssid_build), "%s_E4%3s%3s%1d%4s%4s",
 			devconf->device_onboarding_id, devconf->mnid, devconf->setupid, setup_type, hashed_sn, last_sn);
 
@@ -154,7 +151,6 @@ char *_es_json_parse_string(JSON_H *json, const char *name)
 	return buf;
 }
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 STATIC_FUNCTION
 iot_error_t _es_crypto_cipher_gen_iv(iot_crypto_cipher_info_t *iv_info)
 {
@@ -301,7 +297,6 @@ dec_fail:
 	}
 	return err;
 }
-#endif
 
 STATIC_FUNCTION
 iot_error_t _es_time_set(unsigned char *time)
@@ -351,11 +346,9 @@ iot_error_t _es_deviceinfo_handler(struct iot_context *ctx, char **out_payload)
 	char *output_ptr = NULL;
 	JSON_H *root = NULL;
 	iot_error_t err = IOT_ERROR_NONE;
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	size_t base64_written = 0;
 	size_t encode_buf_len = 0;
 	unsigned char *encode_buf = NULL;
-#endif
 
 	if (!ctx) {
 		return IOT_ERROR_EASYSETUP_INTERNAL_SERVER_ERROR;
@@ -371,7 +364,6 @@ iot_error_t _es_deviceinfo_handler(struct iot_context *ctx, char **out_payload)
 	JSON_ADD_ITEM_TO_OBJECT(root, "hashedSn", JSON_CREATE_STRING((char *)ctx->devconf.hashed_sn));
 	JSON_ADD_NUMBER_TO_OBJECT(root, "wifiSupportFrequency", (double) iot_bsp_wifi_get_freq());
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	err = _es_crypto_cipher_gen_iv(ctx->es_crypto_cipher_info);
 	if (err != IOT_ERROR_NONE) {
 		IOT_ERROR("failed to generate cipher iv!!");
@@ -394,15 +386,12 @@ iot_error_t _es_deviceinfo_handler(struct iot_context *ctx, char **out_payload)
 	}
 
 	JSON_ADD_ITEM_TO_OBJECT(root, "iv", JSON_CREATE_STRING((char *)encode_buf));
-#endif
 	output_ptr = JSON_PRINT(root);
 
 	*out_payload = output_ptr;
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 out:
 	if (encode_buf)
 		free(encode_buf);
-#endif
 	if (root)
 		JSON_DELETE(root);
 	return err;
@@ -420,7 +409,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	unsigned char *p_datetime_str = NULL;
 	unsigned char *p_regionaldatetime_str = NULL;
 	unsigned char *p_timezoneid_str = NULL;
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	char *enc_msg = NULL;
 	char *plain_msg = NULL;
 	char tmp[3] = {0};
@@ -441,7 +429,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	size_t result_len = 0;
 	size_t spub_len = 0;
 	size_t rand_asc_len = 0;
-#endif
 
 	root = JSON_PARSE(in_payload);
 	if (!root) {
@@ -450,7 +437,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 		goto exit;
 	}
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	if ((recv = JSON_GET_OBJECT_ITEM(root, "spub")) == NULL) {
 		IOT_INFO("no spub info");
 		err  = IOT_ERROR_EASYSETUP_INVALID_REQUEST;
@@ -548,7 +534,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	ctx->es_crypto_cipher_info->type = IOT_CRYPTO_CIPHER_AES256;
 	ctx->es_crypto_cipher_info->key = master_secret;
 	ctx->es_crypto_cipher_info->key_len = IOT_CRYPTO_SECRET_LEN;
-#endif
 
 	if ((recv = JSON_GET_OBJECT_ITEM(root, "datetime")) == NULL) {
 		IOT_INFO("no datetime info");
@@ -557,7 +542,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 	p_datetime_str = (unsigned char *)JSON_GET_STRING_VALUE(recv);
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	input_len = (unsigned int)strlen((char*)p_datetime_str);
 	output_len = IOT_CRYPTO_CAL_B64_DEC_LEN(input_len);
 	if ((decode_buf = iot_os_malloc(output_len)) == NULL) {
@@ -584,12 +568,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 	iot_os_free(decode_buf);
 	decode_buf = NULL;
-#else
-	err = _es_time_set(p_datetime_str);
-	if (err) {
-		goto exit_secret;
-	}
-#endif
 
 	if ((recv = JSON_GET_OBJECT_ITEM(root, "regionaldatetime")) == NULL) {
 		IOT_INFO("no regionaldatetime info");
@@ -598,7 +576,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 	p_regionaldatetime_str = (unsigned char *)JSON_GET_STRING_VALUE(recv);
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	input_len = (unsigned int)strlen((char*)p_regionaldatetime_str);
 	output_len = IOT_CRYPTO_CAL_B64_DEC_LEN(input_len);
 	if ((decode_buf = iot_os_malloc(output_len)) == NULL) {
@@ -619,9 +596,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	IOT_DEBUG("regionaldatetime = %s", decode_buf);
 	iot_os_free(decode_buf); // TODO: how to use this value
 	decode_buf = NULL;
-#else
-	IOT_DEBUG("regionaldatetime = %s", p_regionaldatetime_str);
-#endif
 
 	if ((recv = JSON_GET_OBJECT_ITEM(root, "timezoneid")) == NULL) {
 		IOT_INFO("no timezoneid info");
@@ -630,7 +604,6 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 	p_timezoneid_str = (unsigned char *)JSON_GET_STRING_VALUE(recv);
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	input_len = (unsigned int)strlen((char*)p_timezoneid_str);
 	output_len = IOT_CRYPTO_CAL_B64_DEC_LEN(input_len);
 	if ((decode_buf = iot_os_malloc(output_len)) == NULL) {
@@ -651,9 +624,7 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 
 	IOT_DEBUG("timezoneid = %s", decode_buf); // TODO: where to store
-#else
-	IOT_DEBUG("timezoneid = %s", p_timezoneid_str); // TODO: where to store
-#endif
+
 temp_exit:// TODO: once app is published with time info feature, it should be deleted.
 
 	JSON_DELETE(root);
@@ -678,7 +649,6 @@ temp_exit:// TODO: once app is published with time info feature, it should be de
 	}
 	JSON_ADD_ITEM_TO_OBJECT(root, "otmSupportFeatures", array);
 	
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	plain_msg = JSON_PRINT(root);
 
 	err = _encrypt_and_encode(ctx->es_crypto_cipher_info, (unsigned char*) plain_msg, strlen(plain_msg), &enc_msg);
@@ -696,13 +666,11 @@ temp_exit:// TODO: once app is published with time info feature, it should be de
 	}
 
 	JSON_ADD_ITEM_TO_OBJECT(root, "message", JSON_CREATE_STRING(enc_msg));
-#endif
 
 	final_msg = JSON_PRINT(root);
 
 	*out_payload = final_msg;
 exit_secret:
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	if (decode_buf) {
 		free(decode_buf);
 	}
@@ -717,7 +685,6 @@ exit_secret:
 	}
 exit_pk:
 	iot_es_crypto_free_pk(&pk_info);
-#endif
 exit:
 	if (root) {
 		JSON_DELETE(root);
@@ -815,12 +782,10 @@ iot_error_t _es_confirminfo_handler(struct iot_context *ctx, char *in_payload, c
 	JSON_H *recv = NULL;
 	JSON_H *root = NULL;
 	iot_error_t err = IOT_ERROR_NONE;
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	char *enc_msg = NULL;
 	char *dec_msg = NULL;
 	char *plain_msg = NULL;
 	char *recv_msg = NULL;
-#endif
 
 	if (!ctx || !in_payload) {
 		return IOT_ERROR_EASYSETUP_INTERNAL_SERVER_ERROR;
@@ -833,7 +798,6 @@ iot_error_t _es_confirminfo_handler(struct iot_context *ctx, char *in_payload, c
 		goto out;
 	}
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	recv_msg = _es_json_parse_string(root, "message");
 	if (!recv_msg) {
 		IOT_ERROR("Invalid message");
@@ -855,7 +819,6 @@ iot_error_t _es_confirminfo_handler(struct iot_context *ctx, char *in_payload, c
 		err = IOT_ERROR_EASYSETUP_INVALID_REQUEST;
 		goto out;
 	}
-#endif
 
 	if ((recv = JSON_GET_OBJECT_ITEM(root, "otmSupportFeature")) == NULL) {
 		IOT_INFO("no otmsupportfeature info");
@@ -889,7 +852,6 @@ iot_error_t _es_confirminfo_handler(struct iot_context *ctx, char *in_payload, c
 		goto out;
 	}
 	
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	plain_msg = JSON_PRINT(root);
 
 	err = _encrypt_and_encode(ctx->es_crypto_cipher_info, (unsigned char*) plain_msg, strlen(plain_msg), &enc_msg);
@@ -908,13 +870,11 @@ iot_error_t _es_confirminfo_handler(struct iot_context *ctx, char *in_payload, c
 	}
 
 	JSON_ADD_ITEM_TO_OBJECT(root, "message", JSON_CREATE_STRING(enc_msg));
-#endif
 
 	final_msg = JSON_PRINT(root);
 
 	*out_payload = final_msg;
 out:
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	if (plain_msg) {
 		free(plain_msg);
 	}
@@ -927,7 +887,6 @@ out:
 	if (enc_msg) {
 		free(enc_msg);
 	}
-#endif
 	if (root) {
 		JSON_DELETE(root);
 	}
@@ -944,12 +903,10 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 	JSON_H *root = NULL;
 	int i;
 	iot_error_t err = IOT_ERROR_NONE;
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	char *plain_msg = NULL;
 	char *recv_msg = NULL;
 	char *enc_msg = NULL;
 	char *dec_msg = NULL;
-#endif
 
 	if (!ctx || !ctx->pin) {
 		IOT_ERROR("no pin from device app");
@@ -968,7 +925,6 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 		goto out;
 	}
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	recv_msg = _es_json_parse_string(root, "message");
 	if (!recv_msg) {
 		IOT_ERROR("Invalid message");
@@ -991,7 +947,6 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 		err = IOT_ERROR_EASYSETUP_INVALID_REQUEST;
 		goto out;
 	}
-#endif
 
 	if ((recv = JSON_GET_OBJECT_ITEM(root, "pin")) == NULL) {
 		IOT_INFO("no pin info");
@@ -1039,7 +994,7 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 		err = IOT_ERROR_EASYSETUP_JSON_CREATE_ERROR;
 		goto out;
 	}
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
+
 	plain_msg = JSON_PRINT(root);
 
 	err = _encrypt_and_encode(ctx->es_crypto_cipher_info, (unsigned char*) plain_msg, strlen(plain_msg), &enc_msg);
@@ -1057,7 +1012,7 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 
 	JSON_ADD_ITEM_TO_OBJECT(root, "message", JSON_CREATE_STRING(enc_msg));
-#endif
+
 	final_msg = JSON_PRINT(root);
 
 	*out_payload = final_msg;
@@ -1069,7 +1024,6 @@ iot_error_t _es_confirm_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 
 out:
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	if (plain_msg) {
 		free(plain_msg);
 	}
@@ -1082,7 +1036,6 @@ out:
 	if (enc_msg) {
 		free(enc_msg);
 	}
-#endif
 	if (root) {
 		JSON_DELETE(root);
 	}
@@ -1099,10 +1052,8 @@ iot_error_t _es_wifiscaninfo_handler(struct iot_context *ctx, char **out_payload
 	JSON_H *array_obj = NULL;
 	int i;
 	iot_error_t err = IOT_ERROR_NONE;
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	char *enc_msg = NULL;
 	char *plain_msg = NULL;
-#endif
 
 	if (!ctx) {
 		return IOT_ERROR_EASYSETUP_INTERNAL_SERVER_ERROR;
@@ -1151,7 +1102,6 @@ iot_error_t _es_wifiscaninfo_handler(struct iot_context *ctx, char **out_payload
 	}
 	JSON_ADD_ITEM_TO_OBJECT(root, "wifiScanInfo", array);
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	plain_msg = JSON_PRINT(root);
 
 	err = _encrypt_and_encode(ctx->es_crypto_cipher_info, (unsigned char *) plain_msg, strlen(plain_msg), &enc_msg);
@@ -1168,19 +1118,17 @@ iot_error_t _es_wifiscaninfo_handler(struct iot_context *ctx, char **out_payload
 		goto out;
 	}
 	JSON_ADD_ITEM_TO_OBJECT(root, "message", JSON_CREATE_STRING(enc_msg));
-#endif
+
 	final_msg = JSON_PRINT(root);
 
 	*out_payload = final_msg;
 out:
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	if (enc_msg) {
 		free(enc_msg);
 	}
 	if (plain_msg) {
 		free(plain_msg);
 	}
-#endif
 	if (root) {
 		JSON_DELETE(root);
 	}
@@ -1427,11 +1375,9 @@ iot_error_t _es_wifiprovisioninginfo_handler(struct iot_context *ctx, char *in_p
 	char *recv_msg = NULL;
 	JSON_H *root = NULL;
 	iot_error_t err = IOT_ERROR_NONE;
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	char *enc_msg = NULL;
 	char *dec_msg = NULL;
 	char *plain_msg = NULL;
-#endif
 
 	root = JSON_PARSE(in_payload);
 	if (!root) {
@@ -1440,7 +1386,6 @@ iot_error_t _es_wifiprovisioninginfo_handler(struct iot_context *ctx, char *in_p
 		goto out;
 	}
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	recv_msg = _es_json_parse_string(root, "message");
 	if (!recv_msg) {
 		IOT_ERROR("Invalid message");
@@ -1465,21 +1410,6 @@ iot_error_t _es_wifiprovisioninginfo_handler(struct iot_context *ctx, char *in_p
 		IOT_ERROR("failed to parse cloud_prov");
 		goto out;
 	}
-#else
-	recv_msg = JSON_PRINT(root);
-
-	err = _es_wifi_prov_parse(ctx, (char *)recv_msg);
-	if (err) {
-		IOT_ERROR("failed to parse wifi_prov");
-		goto out;
-	}
-
-	err = _es_cloud_prov_parse((char *)recv_msg);
-	if (err) {
-		IOT_ERROR("failed to parse cloud_prov");
-		goto out;
-	}
-#endif
 
 	if (ctx->lookup_id == NULL) {
 		ctx->lookup_id = iot_os_malloc(IOT_REG_UUID_STR_LEN + 1);
@@ -1503,7 +1433,6 @@ iot_error_t _es_wifiprovisioninginfo_handler(struct iot_context *ctx, char *in_p
 	}
 	JSON_ADD_ITEM_TO_OBJECT(root, "lookupId", JSON_CREATE_STRING(ctx->lookup_id));
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	plain_msg = JSON_PRINT(root);
 
 	err = _encrypt_and_encode(ctx->es_crypto_cipher_info, (unsigned char*) plain_msg, strlen(plain_msg), &enc_msg);
@@ -1520,7 +1449,7 @@ iot_error_t _es_wifiprovisioninginfo_handler(struct iot_context *ctx, char *in_p
 		goto out;
 	}
 	JSON_ADD_ITEM_TO_OBJECT(root, "message", JSON_CREATE_STRING(enc_msg));
-#endif
+
 	final_msg = JSON_PRINT(root);
 
 	*out_payload = final_msg;
@@ -1536,7 +1465,6 @@ out:
 	if (recv_msg) {
 		free(recv_msg);
 	}
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	if (dec_msg) {
 		free(dec_msg);
 	}
@@ -1546,7 +1474,6 @@ out:
 	if (plain_msg) {
 		free(plain_msg);
 	}
-#endif
 	if (root) {
 		JSON_DELETE(root);
 	}
@@ -1559,10 +1486,8 @@ iot_error_t _es_setupcomplete_handler(struct iot_context *ctx, char *in_payload,
 	char *final_msg = NULL;
 	JSON_H *root = NULL;
 	iot_error_t err = IOT_ERROR_NONE;
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	char *enc_msg = NULL;
 	char *plain_msg = NULL;
-#endif
 
 	root = JSON_CREATE_OBJECT();
 	if (!root) {
@@ -1571,7 +1496,6 @@ iot_error_t _es_setupcomplete_handler(struct iot_context *ctx, char *in_payload,
 		goto out;
 	}
 
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	plain_msg = JSON_PRINT(root);
 
 	err = _encrypt_and_encode(ctx->es_crypto_cipher_info, (unsigned char*) plain_msg, strlen(plain_msg), &enc_msg);
@@ -1588,19 +1512,17 @@ iot_error_t _es_setupcomplete_handler(struct iot_context *ctx, char *in_payload,
 		goto out;
 	}
 	JSON_ADD_ITEM_TO_OBJECT(root, "message", JSON_CREATE_STRING(enc_msg));
-#endif
+
 	final_msg = JSON_PRINT(root);
 
 	*out_payload = final_msg;
 out:
-#if !defined(CONFIG_STDK_IOT_CORE_EASYSETUP_X509)
 	if (enc_msg) {
 		free(enc_msg);
 	}
 	if (plain_msg) {
 		free(plain_msg);
 	}
-#endif
 	if (root) {
 		JSON_DELETE(root);
 	}
