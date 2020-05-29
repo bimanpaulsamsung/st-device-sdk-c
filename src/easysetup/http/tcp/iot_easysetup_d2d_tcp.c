@@ -530,7 +530,7 @@ iot_error_t _es_keyinfo_handler(struct iot_context *ctx, char *in_payload, char 
 	}
 
 	if (pk_info.type != IOT_CRYPTO_PK_ED25519) {
-		IOT_ERROR("%d is not suported yet", pk_info.type);
+		IOT_ERROR("%d is not supported yet", pk_info.type);
 		IOT_ES_DUMP(IOT_DEBUG_LEVEL_ERROR, IOT_DUMP_EASYSETUP_NOT_SUPPORTED, pk_info.type);
 		err = IOT_ERROR_EASYSETUP_NOT_SUPPORTED;
 		goto exit_pk;
