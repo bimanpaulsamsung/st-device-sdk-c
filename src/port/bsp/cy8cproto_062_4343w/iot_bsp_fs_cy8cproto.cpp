@@ -96,24 +96,27 @@ iot_error_t iot_bsp_fs_open_from_stnv(const char *filename, iot_bsp_fs_handle_t 
 	return iot_bsp_fs_open(filename, FS_READONLY, handle);
 }
 
-iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, unsigned int length)
+iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, size_t *length)
 {
-	int ret;
-	struct stat st;
-	int filelen;
-
 	int fd = handle.fd;
 	if (fd == -1) {
 		return IOT_ERROR_FS_NO_FILE;
 	}
 
-	fstat(fd, &st);
-	filelen = st.st_size;
-	ret = read(fd, buffer, filelen);
-	buffer[filelen] = '\0';
-	if (ret == -1) {
-		return IOT_ERROR_FS_READ_FAIL;
+	char *data = (char *)malloc(*length + 1);
+	IOT_DEBUG_CHECK(data == NULL, IOT_ERROR_MEM_ALLOC, "Memory allocation fail");
+
+	ssize_t size = read(handle.fd, data, *length);
+	IOT_DEBUG_CHECK(size < 0, IOT_ERROR_FS_READ_FAIL, "read fail [%s]", strerror(errno));
+
+	memcpy(buffer, data, size);
+	if (size < *length) {
+		buffer[size] = '\0';
 	}
+
+	*length = size;
+
+	free(data);
 
 	return IOT_ERROR_NONE;
 }
