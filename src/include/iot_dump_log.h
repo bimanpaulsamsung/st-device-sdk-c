@@ -198,4 +198,8 @@ typedef enum {
  */
 iot_error_t iot_dump_create_all_log_dump(struct iot_context *iot_ctx, char **log_dump_output, size_t max_log_dump_size, size_t *allocated_size, int need_base64);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _IOT_DUMP_LOG_H_ */
