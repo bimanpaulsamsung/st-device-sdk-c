@@ -17,8 +17,25 @@
  ****************************************************************************/
 
 #include "iot_bsp_random.h"
+#include "iot_debug.h"
+#include <stdlib.h>
+#include "trng_api.h"
 
 unsigned int iot_bsp_random()
 {
-	return 0;
+	trng_t obj;
+	uint32_t randomInt;
+	size_t output_length;
+
+	trng_init(&obj);
+	int ret = trng_get_bytes(&obj, (uint8_t *)&randomInt,
+			sizeof(randomInt), &output_length);
+	trng_free(&obj);
+
+	if (ret != 0) {
+		IOT_ERROR("Random Number generation failed");
+		return 0;
+	}
+
+	return randomInt;
 }
