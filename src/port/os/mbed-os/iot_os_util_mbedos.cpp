@@ -23,138 +23,345 @@
 #include "iot_os_util.h"
 #include "iot_debug.h"
 
+#include "cmsis_os2.h"
+#include "mbed.h"
+#include "MbedStdkQueue.h"
+#include "MbedLinkedList.h"
+#include "us_ticker_api.h"
 
-/* TODO: set correct values */
-const unsigned int iot_os_max_delay = 0xFFFFFFFF;
+const unsigned int iot_os_max_delay = osWaitForever;
 const unsigned int iot_os_true = 1;
 const unsigned int iot_os_false = 0;
 
+typedef void (*callbackFN)(void *); /* define Thread callback function type */
+
+static MbedLinkedList threadlist;
+
 /* Thread */
+static osPriority_t get_mbed_priority(int priority)
+{
+	switch (priority) {
+	case 0:
+		return osPriorityIdle;
+	case 1:
+		return osPriorityLow;
+	case 2:
+		return osPriorityBelowNormal;
+	case 3:
+		return osPriorityNormal;
+	case 4:
+		return osPriorityAboveNormal;
+	case 5:
+		return osPriorityHigh;
+	}
+	return osPriorityNone;
+}
+
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
 		void* data, int priority, iot_os_thread* thread_handle)
 {
+	Thread *thread = new Thread(get_mbed_priority(priority), stack_size, nullptr, name);
+	IOT_ERROR_CHECK(!thread, IOT_OS_FALSE, "Memory allocation Failed!!!");
+
+	osStatus status = thread->start(callback((callbackFN)thread_function, data));
+	if (status) {
+		delete thread;
+		return IOT_OS_FALSE;
+	}
+
+	if (threadlist.insert(thread) != LINKED_LIST_ERROR_NONE)
+		IOT_WARN("Failed to Insert");
+
+	if (thread_handle)
+		*thread_handle = thread;
+
 	return IOT_OS_TRUE;
+}
+
+static bool comp(void *loopdata, void *compdata)
+{
+	if (!loopdata || !compdata)
+		return false;
+
+	osThreadId_t tid = (osThreadId_t)compdata;
+	Thread *t = (Thread *)loopdata;
+
+	if (t->get_id() == tid)
+		return true;
+
+	return false;
 }
 
 void iot_os_thread_delete(iot_os_thread thread_handle)
 {
+	Thread *thread = (Thread *)thread_handle;
 
+	if (!thread) {
+		osThreadId_t tid = osThreadGetId();
+		linked_list_error_t ret  = threadlist.search(comp,
+				(void *)tid, (void **)&thread);
+		if (ret != LINKED_LIST_ERROR_NONE) {
+			IOT_ERROR("Invalid Thread!!!");
+			return;
+		}
+	}
+	threadlist.remove(thread);
+	delete thread;
 }
 
 void iot_os_thread_yield()
 {
-
+	osThreadYield();
 }
 
 /* Queue */
 iot_os_queue* iot_os_queue_create(int queue_length, int item_size)
 {
-	return NULL;
+	MbedStdkQueue *queue = new MbedStdkQueue(queue_length, item_size);
+	return queue;
 }
 
 int iot_os_queue_reset(iot_os_queue* queue_handle)
 {
+	MbedStdkQueue *queue = (MbedStdkQueue *)queue_handle;
+	IOT_ERROR_CHECK(queue == NULL, IOT_OS_FALSE, "Invalid Queue");
+	IOT_WARN("Queue Reset");
+	queue->queueReset();
 	return IOT_OS_TRUE;
 }
 
 void iot_os_queue_delete(iot_os_queue* queue_handle)
 {
-
+	MbedStdkQueue *queue = (MbedStdkQueue *)queue_handle;
+	if (!queue) {
+		IOT_ERROR("Queue Delete: Invalid Queue!!!");
+		return;
+	}
+	delete queue;
 }
 
 int iot_os_queue_send(iot_os_queue* queue_handle, void * data, unsigned int wait_time_ms)
 {
+	MbedStdkQueue *queue = (MbedStdkQueue *)queue_handle;
+	IOT_ERROR_CHECK(queue == NULL, IOT_OS_FALSE, "Invalid Queue");
+	IOT_ERROR_CHECK(data == NULL, IOT_OS_FALSE, "Invalid Data");
+
+	if (queue->put(data, wait_time_ms) != osOK) {
+		IOT_ERROR("Failed to put data in queue");
+		return IOT_OS_FALSE;
+	}
 	return IOT_OS_TRUE;
 }
 
 int iot_os_queue_receive(iot_os_queue* queue_handle, void * data, unsigned int wait_time_ms)
 {
-	return IOT_OS_TRUE;
+	MbedStdkQueue *queue = (MbedStdkQueue *)queue_handle;
+	IOT_ERROR_CHECK(queue == NULL, IOT_OS_FALSE, "Invalid Queue");
+	IOT_ERROR_CHECK(data == NULL, IOT_OS_FALSE, "Invalid data Buffer");
+
+	IOT_DEBUG("Queue Count: %d", queue->count());
+	osEvent evt = queue->get(data, wait_time_ms);
+	IOT_DEBUG("Queue STATUS: %d", evt.status);
+	if (evt.status == osEventMessage) {
+		return IOT_OS_TRUE;
+	}
+	IOT_ERROR("Failed to get data from queue");
+	return IOT_OS_FALSE;
 }
 
 /* Event Group */
 iot_os_eventgroup* iot_os_eventgroup_create(void)
 {
-	return NULL;
+	EventFlags *ef = new EventFlags();
+	return ef;
 }
 
 void iot_os_eventgroup_delete(iot_os_eventgroup* eventgroup_handle)
 {
-
+	EventFlags *ef = (EventFlags *)eventgroup_handle;
+	if (!ef) {
+		IOT_ERROR("Event Delete: Invalid Event!!!");
+		return;
+	}
+	delete ef;
 }
 
 unsigned int iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
 		const unsigned int bits_to_wait_for, const int clear_on_exit,
 		const int wait_for_all_bits, const unsigned int wait_time_ms)
 {
-	return 0;
+	EventFlags *ef = (EventFlags *)eventgroup_handle;
+	uint32_t ret;
+
+	IOT_ERROR_CHECK(ef == NULL, IOT_OS_FALSE, "Invalid Event");
+
+	if (wait_for_all_bits) {
+		IOT_DEBUG("all_of_bits_to_wait_for: 0x%x", bits_to_wait_for);
+		ret =  ef->wait_all(bits_to_wait_for, wait_time_ms, clear_on_exit);
+		if (ret & osFlagsError) {
+			IOT_DEBUG("Event not received for bits 0x%x | Ret [0x%x]",
+					bits_to_wait_for, ret);
+			return 0;
+		}
+		IOT_DEBUG("Received ALL | Bits: 0x%x | Value: 0x%x",
+				bits_to_wait_for, ret);
+		return ret;
+	}
+
+	IOT_DEBUG("any_of_bits_to_wait_for: 0x%x", bits_to_wait_for);
+	ret = ef->wait_any(bits_to_wait_for, wait_time_ms, clear_on_exit);
+	if (ret & osFlagsError) {
+		IOT_DEBUG("Did not receive Event for bits 0x%x | Ret [0x%x]",
+				bits_to_wait_for, ret);
+		return 0;
+	}
+	IOT_DEBUG("Received ANY | Bits: 0x%x | Value: 0x%x", bits_to_wait_for, ret);
+	return ret;
 }
 
 unsigned int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
 		const unsigned int bits_to_set)
 {
-	return 0;
+	EventFlags *ef = (EventFlags *)eventgroup_handle;
+	IOT_ERROR_CHECK(ef == NULL, 0, "Invalid Event");
+	IOT_DEBUG("bits_to_set: 0x%x", bits_to_set);
+	return ef->set(bits_to_set);
 }
 
 unsigned int iot_os_eventgroup_get_bits(iot_os_eventgroup* eventgroup_handle)
 {
-	return 0;
+	EventFlags *ef = (EventFlags *)eventgroup_handle;
+	IOT_ERROR_CHECK(ef == NULL, 0, "Invalid Event");
+	return ef->get();
 }
 
 unsigned int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
 		const unsigned int bits_to_clear)
 {
-	return 0;
+	EventFlags *ef = (EventFlags *)eventgroup_handle;
+	IOT_ERROR_CHECK(ef == NULL, 0, "Invalid Event");
+	IOT_INFO("bits_to_set: 0x%x", bits_to_clear);
+	return ef->clear(bits_to_clear);
 }
 
 /* Mutex */
 int iot_os_mutex_init(iot_os_mutex* mutex)
 {
+	IOT_ERROR_CHECK(!mutex, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+
+	Mutex *sem =  new Mutex();
+	IOT_ERROR_CHECK(!sem, IOT_ERROR_MEM_ALLOC, "Memory Allocation Failed!!!");
+
+	mutex->sem = sem;
 	return IOT_ERROR_NONE;
 }
 
 int iot_os_mutex_lock(iot_os_mutex* mutex)
 {
-	return  IOT_ERROR_NONE;
+	IOT_ERROR_CHECK(!mutex || !mutex->sem, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+	Mutex *sem = (Mutex *)mutex->sem;
+	osStatus ret = sem->lock();
+	if (ret == osOK)
+		return IOT_ERROR_NONE;
+
+	return  IOT_ERROR_BAD_REQ;
 }
 
 int iot_os_mutex_unlock(iot_os_mutex* mutex)
 {
-	return  IOT_ERROR_NONE;
+	IOT_ERROR_CHECK(!mutex, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+	Mutex *sem = (Mutex *)mutex->sem;
+	osStatus ret = sem->unlock();
+
+	if (ret == osOK)
+		return IOT_ERROR_NONE;
+
+	return  IOT_ERROR_BAD_REQ;
 }
 
 void iot_os_mutex_destroy(iot_os_mutex* mutex)
 {
-
+	if (!mutex || !mutex->sem) {
+		IOT_ERROR("Invalid Parameters!!!");
+		return;
+	}
+	delete (Mutex *)mutex->sem;
+	mutex->sem = NULL;
 }
 
 /* Delay */
 void iot_os_delay(unsigned int delay_ms)
 {
-
+	osDelay(delay_ms);
 }
+
+static unsigned int xTaskGetTickCount(void)
+{
+	return (int)rtos::Kernel::get_ms_count(); // TICK in milliseconds
+}
+
+static void vTaskSetTimeOutState(unsigned int *mstime)
+{
+	if (mstime)
+		*mstime = xTaskGetTickCount();
+}
+
+static bool xTaskCheckForTimeOut(unsigned int begin, unsigned int timeout)
+{
+	unsigned int mstime = xTaskGetTickCount();
+
+	if (mstime < (begin + timeout))
+		return false;
+
+	return true;
+}
+
+typedef struct Mbedos_Timer {
+	unsigned int msWait;
+	unsigned int beginTime;
+} Mbedos_Timer;
 
 void iot_os_timer_count_ms(iot_os_timer timer, unsigned int timeout_ms)
 {
-
+	((Mbedos_Timer *)timer)->msWait = timeout_ms; /* convert milliseconds to ticks */
+	vTaskSetTimeOutState(&((Mbedos_Timer *)timer)->beginTime); /* Record the time at which this function was entered. */
 }
 
 unsigned int iot_os_timer_left_ms(iot_os_timer timer)
 {
+	Mbedos_Timer *mbedos_timer = (Mbedos_Timer *)timer;
+	unsigned int cTime = xTaskGetTickCount();
+
+	if (cTime < (mbedos_timer->beginTime + mbedos_timer->msWait))
+		return (mbedos_timer->beginTime + mbedos_timer->msWait - cTime);
+
 	return 0;
 }
 
 char iot_os_timer_isexpired(iot_os_timer timer)
 {
-	return 0;
+	Mbedos_Timer *mbedos_timer = (Mbedos_Timer *)timer;
+	return xTaskCheckForTimeOut(mbedos_timer->beginTime,mbedos_timer->msWait);
 }
 
 int iot_os_timer_init(iot_os_timer *timer)
 {
+	if (!timer)
+		return IOT_ERROR_INVALID_ARGS;
+
+	*timer = malloc(sizeof(Mbedos_Timer));
+	if (*timer == NULL)
+		return IOT_ERROR_MEM_ALLOC;
+
+	memset(*timer, '\0', sizeof(Mbedos_Timer));
 	return IOT_ERROR_NONE;
 }
 
 void iot_os_timer_destroy(iot_os_timer *timer)
 {
+	if (timer == NULL || *timer == NULL)
+		return;
 
+	free(*timer);
+	*timer = NULL;
 }
