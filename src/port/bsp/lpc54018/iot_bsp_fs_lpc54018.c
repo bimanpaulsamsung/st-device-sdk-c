@@ -24,7 +24,7 @@
 #include "semphr.h"
 #include "mflash_file.h"
 
-#define MAX_NV_ITEM_CNT		21
+#define MAX_NV_ITEM_CNT		19
 #define STDK_NV_SECTOR_SIZE		(0x1000)
 #define NV_BASE_ADDRESS		(0x10100000)
 
@@ -37,8 +37,6 @@ mflash_file_t nv_table[MAX_NV_ITEM_CNT] = {
 	{.path = "CloudProvStatus",	.max_size = STDK_NV_SECTOR_SIZE},  // CloudProvStatus
 	{.path = "ServerURL",		.max_size = STDK_NV_SECTOR_SIZE},  // ServerURL
 	{.path = "ServerPort",		.max_size = STDK_NV_SECTOR_SIZE},  // ServerPort
-	{.path = "LocationID",		.max_size = STDK_NV_SECTOR_SIZE},  // LocationID
-	{.path = "RoomID",		.max_size = STDK_NV_SECTOR_SIZE},  // RoomID
 	{.path = "Label",		.max_size = STDK_NV_SECTOR_SIZE},  // Label
 	{.path = "DeviceID",		.max_size = STDK_NV_SECTOR_SIZE},  // DeviceID
 	{.path = "PrivateKey",		.max_size = STDK_NV_SECTOR_SIZE},  // PrivateKey

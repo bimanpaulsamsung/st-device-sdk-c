@@ -29,7 +29,7 @@ typedef struct nv_item_table
 	size_t addr;
 } nv_item_table_s;
 
-#define MAX_NV_ITEM_CNT				20
+#define MAX_NV_ITEM_CNT			18
 
 #define STDK_NV_SECTOR_SIZE            (0x1000)
 
@@ -45,8 +45,6 @@ nv_item_table_s nv_table[MAX_NV_ITEM_CNT] = {
 	{0xd317a076, 65, NULL},   // CloudProvStatus
 	{0x2892596, 512, NULL},  // ServerURL
 	{0xcadbd84, 37, NULL},   // ServerPort
-	{0xc02865a, 37, NULL},  // LocationID
-	{0x53a82, 37, NULL},  // RoomID
 	{0xf4e0, 37, NULL},  // Lable
 
 	{0x70012d, 129, NULL},  // DeviceID
