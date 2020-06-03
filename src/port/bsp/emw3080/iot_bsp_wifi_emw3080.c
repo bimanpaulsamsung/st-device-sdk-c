@@ -65,7 +65,7 @@ static void _obtain_time(void)
 	_set_sntp_server(index, "pool.ntp.org");
 
 	sntp_start_auto_time_sync(1000, _time_synced_cb);
-	ux_bits = iot_os_eventgroup_wait_bits(wifi_event_group, WIFI_TIME_SET_BIT, true, false, 4 * IOT_WIFI_CMD_TIMEOUT);
+	ux_bits = iot_os_eventgroup_wait_bits(wifi_event_group, WIFI_TIME_SET_BIT, true, 4 * IOT_WIFI_CMD_TIMEOUT);
 	if((ux_bits & WIFI_TIME_SET_BIT) == 0) {
 		IOT_ERROR("Can't sync time from sntp.");
 		return;
@@ -234,7 +234,7 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 	case IOT_WIFI_MODE_STATION:
 		_iot_wifi_set_station(conf);
 
-		ux_bits = iot_os_eventgroup_wait_bits(wifi_event_group, WIFI_STA_CONNECT_BIT, true, false, 2 * IOT_WIFI_CMD_TIMEOUT);
+		ux_bits = iot_os_eventgroup_wait_bits(wifi_event_group, WIFI_STA_CONNECT_BIT, true, 2 * IOT_WIFI_CMD_TIMEOUT);
 		if((ux_bits & WIFI_STA_CONNECT_BIT)) {
 			IOT_INFO("AP Connected");
 		} else {
@@ -309,7 +309,7 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 	iot_scan_buff = scan_result;
 
 	ux_bits = iot_os_eventgroup_wait_bits(wifi_event_group, WIFI_STA_SCAN_BIT,
-				true, false, IOT_WIFI_CMD_TIMEOUT);
+				true, IOT_WIFI_CMD_TIMEOUT);
 
 	iot_scan_buff = NULL; //reset the buffer pointer for callback
 	if (ux_bits & WIFI_STA_SCAN_BIT) {

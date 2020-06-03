@@ -315,8 +315,7 @@ void iot_os_eventgroup_delete(iot_os_eventgroup* eventgroup_handle)
 }
 
 unsigned int iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
-		const unsigned int bits_to_wait_for, const int clear_on_exit,
-		const int wait_for_all_bits, const unsigned int wait_time_ms)
+		const unsigned int bits_to_wait_for, const int clear_on_exit, const unsigned int wait_time_ms)
 {
 	que_for_bmp* eg_res;
 	iot_moc_eventgroup *eg;
@@ -359,13 +358,13 @@ unsigned int iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
 	return qdata;
 }
 
-unsigned int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
+int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
 		const unsigned int bits_to_set)
 {
 	iot_moc_eventgroup *eg;
 	que_for_bmp* eg_res = NULL;
 
-	IOT_ERROR_CHECK(eventgroup_handle == NULL, 0, "set bits invalid handle.");
+	IOT_ERROR_CHECK(eventgroup_handle == NULL, IOT_OS_FALSE, "set bits invalid handle.");
 
 	eg = (iot_moc_eventgroup*)eventgroup_handle;
 	eg_res = _eventgroup_get_res_to_send(eg, bits_to_set);
@@ -378,17 +377,17 @@ unsigned int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
 		}
 	}
 
-	return bits_to_set;
+	return IOT_OS_TRUE;
 }
 
-unsigned int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
+int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
 		const unsigned int bits_to_clear)
 {
 	iot_moc_eventgroup *eg;
 	que_for_bmp* eg_res = NULL;
 	int data;
 
-	IOT_ERROR_CHECK(eventgroup_handle == NULL, 0, "clear bits invalid handle.");
+	IOT_ERROR_CHECK(eventgroup_handle == NULL, IOT_OS_FALSE, "clear bits invalid handle.");
 
 	eg = (iot_moc_eventgroup*)eventgroup_handle;
 	memset(eg->cache_bits, 0, sizeof(eg->cache_bits));
@@ -402,7 +401,7 @@ unsigned int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
 		}
 	}
 
-	return IOT_ERROR_NONE;
+	return IOT_OS_TRUE;
 }
 
 /* Mutex */
