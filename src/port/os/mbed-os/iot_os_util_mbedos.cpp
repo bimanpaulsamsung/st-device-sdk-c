@@ -247,36 +247,36 @@ unsigned int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
 /* Mutex */
 int iot_os_mutex_init(iot_os_mutex* mutex)
 {
-	IOT_ERROR_CHECK(!mutex, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+	IOT_ERROR_CHECK(!mutex, IOT_OS_FALSE, "Invalid Parameters!!!");
 
 	Mutex *sem =  new Mutex();
-	IOT_ERROR_CHECK(!sem, IOT_ERROR_MEM_ALLOC, "Memory Allocation Failed!!!");
+	IOT_ERROR_CHECK(!sem, IOT_OS_FALSE, "Memory Allocation Failed!!!");
 
 	mutex->sem = sem;
-	return IOT_ERROR_NONE;
+	return IOT_OS_TRUE;
 }
 
 int iot_os_mutex_lock(iot_os_mutex* mutex)
 {
-	IOT_ERROR_CHECK(!mutex || !mutex->sem, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+	IOT_ERROR_CHECK(!mutex || !mutex->sem, IOT_OS_FALSE, "Invalid Parameters!!!");
 	Mutex *sem = (Mutex *)mutex->sem;
 	osStatus ret = sem->lock();
 	if (ret == osOK)
-		return IOT_ERROR_NONE;
+		return IOT_OS_TRUE;
 
-	return  IOT_ERROR_BAD_REQ;
+	return  IOT_OS_FALSE;
 }
 
 int iot_os_mutex_unlock(iot_os_mutex* mutex)
 {
-	IOT_ERROR_CHECK(!mutex, IOT_ERROR_INVALID_ARGS, "Invalid Parameters!!!");
+	IOT_ERROR_CHECK(!mutex, IOT_OS_FALSE, "Invalid Parameters!!!");
 	Mutex *sem = (Mutex *)mutex->sem;
 	osStatus ret = sem->unlock();
 
 	if (ret == osOK)
-		return IOT_ERROR_NONE;
+		return IOT_OS_TRUE;
 
-	return  IOT_ERROR_BAD_REQ;
+	return  IOT_OS_FALSE;
 }
 
 void iot_os_mutex_destroy(iot_os_mutex* mutex)
