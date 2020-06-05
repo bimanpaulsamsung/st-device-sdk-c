@@ -220,13 +220,6 @@ int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
 	return IOT_OS_TRUE;
 }
 
-unsigned int iot_os_eventgroup_get_bits(iot_os_eventgroup* eventgroup_handle)
-{
-	EventFlags *ef = (EventFlags *)eventgroup_handle;
-	IOT_ERROR_CHECK(ef == NULL, 0, "Invalid Event");
-	return ef->get();
-}
-
 int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
 		const unsigned int bits_to_clear)
 {
