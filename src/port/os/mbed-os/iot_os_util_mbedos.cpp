@@ -188,27 +188,14 @@ void iot_os_eventgroup_delete(iot_os_eventgroup* eventgroup_handle)
 
 unsigned int iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
 		const unsigned int bits_to_wait_for, const int clear_on_exit,
-		const int wait_for_all_bits, const unsigned int wait_time_ms)
+		const unsigned int wait_time_ms)
 {
 	EventFlags *ef = (EventFlags *)eventgroup_handle;
 	uint32_t ret;
 
 	IOT_ERROR_CHECK(ef == NULL, IOT_OS_FALSE, "Invalid Event");
 
-	if (wait_for_all_bits) {
-		IOT_DEBUG("all_of_bits_to_wait_for: 0x%x", bits_to_wait_for);
-		ret =  ef->wait_all(bits_to_wait_for, wait_time_ms, clear_on_exit);
-		if (ret & osFlagsError) {
-			IOT_DEBUG("Event not received for bits 0x%x | Ret [0x%x]",
-					bits_to_wait_for, ret);
-			return 0;
-		}
-		IOT_DEBUG("Received ALL | Bits: 0x%x | Value: 0x%x",
-				bits_to_wait_for, ret);
-		return ret;
-	}
-
-	IOT_DEBUG("any_of_bits_to_wait_for: 0x%x", bits_to_wait_for);
+	IOT_DEBUG("Any of bits to wait for: 0x%x", bits_to_wait_for);
 	ret = ef->wait_any(bits_to_wait_for, wait_time_ms, clear_on_exit);
 	if (ret & osFlagsError) {
 		IOT_DEBUG("Did not receive Event for bits 0x%x | Ret [0x%x]",
