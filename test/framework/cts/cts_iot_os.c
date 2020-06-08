@@ -86,194 +86,146 @@ int CTS_iot_os_eventgroup_wait_bits_TEARDOWN(void** state)
     return 0;
 }
 
+struct eventgroup_single_set_test_data {
+    unsigned int bits_to_set;
+    unsigned int bits_to_wait_for;
+    unsigned int expected_return_for_wait;
+    int clear_on_exit;
+    unsigned int wait_time_ms;
+};
 // This test purposed to test return value and event clearance
-// Given: multiple bits are set to bits_to_set
-// When: wait single bit with clear_on_exit option
+// Given: set single bit
+// When: wait in various condition
 // Then: return bits_to_set and event cleared
-void CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_SINGLE_BIT_WAIT(void** state)
+void CTS_iot_os_eventgroup_wait_bits_SET_SINGLE_BIT(void** state)
 {
     iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
+    struct eventgroup_single_set_test_data test_data[] = {
+            {BIT_0, BIT_0, BIT_0, 1, 5},
+            {BIT_0, BIT_0, BIT_0, 0, 5},
+            {BIT_0, BIT_ALL, BIT_0, 1, 5},
+            {BIT_0, BIT_ALL, BIT_0, 0, 5},
+    };
 
-    // Given: set bit 0, 3
-    result = iot_os_eventgroup_set_bits(event_group, BIT_0 | BIT_3);
-    assert_int_equal(result, BIT_0 | BIT_3);
-    // When: wait until bit 0 set (clear_on_exit true)
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_0, 1, 0, 5);
-    // Then: get bits_to_set (0, 3)
-    assert_int_equal(result, BIT_0 | BIT_3);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, BIT_3);
+    for (int i = 0; i < sizeof(test_data)/sizeof(struct eventgroup_single_set_test_data); i++) {
+        int result;
+        unsigned int event;
+        // Given
+        result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set);
+        assert_int_equal(result, IOT_OS_TRUE);
+        // When
+        event = iot_os_eventgroup_wait_bits(event_group, test_data[i].bits_to_wait_for, test_data[i].clear_on_exit, test_data[i].wait_time_ms);
+        // Then
+        assert_int_equal(event, test_data[i].expected_return_for_wait);
+        // Teardown
+        result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
+        assert_int_equal(result, IOT_OS_TRUE);
+    }
 }
 
 // This test purposed to test return value and event clearance
-// Given: multiple bits are set to bits_to_set
-// When: wait multiple bits with clear_on_exit option
+// Given: set multi bits
+// When: wait in various condition
 // Then: return bits_to_set and all events cleared
-void CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_MULTI_BITS_WAIT(void** state)
+void CTS_iot_os_eventgroup_wait_bits_SET_MULTI_BITS(void** state)
 {
     iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
+    struct eventgroup_single_set_test_data test_data[] = {
+            {BIT_0 | BIT_2, BIT_0, BIT_0 | BIT_2, 1, 5},
+            {BIT_0 | BIT_2, BIT_0, BIT_0 | BIT_2, 0, 5},
+    };
 
-    // Given: set bit 0, 3
-    result = iot_os_eventgroup_set_bits(event_group, BIT_0 | BIT_3);
-    assert_int_equal(result, BIT_0 | BIT_3);
-    // When: wait until bit 0, 3 set (clear_on_exit true)
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_0 | BIT_3, 1, 0, 5);
-    // Then: get bits_to_set (0, 3)
-    assert_int_equal(result, BIT_0 | BIT_3);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, 0);
+    for (int i = 0; i < sizeof(test_data)/sizeof(struct eventgroup_single_set_test_data); i++) {
+        int result;
+        unsigned int event;
+        // Given
+        result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set);
+        assert_int_equal(result, IOT_OS_TRUE);
+        // When
+        event = iot_os_eventgroup_wait_bits(event_group, test_data[i].bits_to_wait_for, test_data[i].clear_on_exit, test_data[i].wait_time_ms);
+        // Then
+        assert_int_equal(event, test_data[i].expected_return_for_wait);
+        // Teardown
+        result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
+        assert_int_equal(result, IOT_OS_TRUE);
+    }
 }
 
 
 // This test purposed to test return value and event clearance
-// Given: multiple bits are set to bits_to_set
-// When: wait single bit without clear_on_exit option
+// Given: set bits
+// When: wait which causes timeout in various condition
 // Then: return bits_to_set and event not cleared
-void CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_SINGLE_BIT_WAIT(void** state)
+void CTS_iot_os_eventgroup_wait_bits_TIMEOUT(void** state)
 {
     iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
+    struct eventgroup_single_set_test_data test_data[] = {
+            {BIT_0, BIT_1, BIT_0, 1, 3},
+            {BIT_0, BIT_1, BIT_0, 0, 3},
+            {BIT_0, BIT_1 | BIT_3, BIT_0, 1, 3},
+            {BIT_0, BIT_1 | BIT_3, BIT_0, 0, 3},
+            {BIT_0 | BIT_2, BIT_1 | BIT_3, BIT_0 | BIT_2, 1, 3},
+            {BIT_0 | BIT_2, BIT_1 | BIT_3, BIT_0 | BIT_2, 0, 3},
+    };
 
-    // Given: set bit 0, 3
-    result = iot_os_eventgroup_set_bits(event_group, BIT_0 | BIT_3);
-    assert_int_equal(result, BIT_0 | BIT_3);
-    // When: wait until bit 0 set (clear_on_exit false)
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_0, 0, 0, 5);
-    // Then: get bit 0, 3
-    assert_int_equal(result, BIT_0 | BIT_3);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, BIT_0 | BIT_3);
+    for (int i = 0; i < sizeof(test_data)/sizeof(struct eventgroup_single_set_test_data); i++) {
+        int result;
+        unsigned int event;
+        // Given
+        result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set);
+        assert_int_equal(result, IOT_OS_TRUE);
+        // When
+        event = iot_os_eventgroup_wait_bits(event_group, test_data[i].bits_to_wait_for, test_data[i].clear_on_exit, test_data[i].wait_time_ms);
+        // Then
+        assert_int_equal(event, test_data[i].expected_return_for_wait);
+        // Teardown
+        result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
+        assert_int_equal(result, IOT_OS_TRUE);
+    }
 }
 
+struct eventgroup_double_set_test_data {
+    unsigned int bits_to_set_1;
+    unsigned int bits_to_set_2;
+    unsigned int bits_to_wait_for;
+    unsigned int expected_return_for_wait;
+    int clear_on_exit;
+    unsigned int wait_time_ms;
+};
 // This test purposed to test return value and event clearance
-// Given: single bit is set to bits_to_set
-// When: wait multiple bits without clear_on_exit, wait_for_all_bits option
-// Then: return bits_to_set and all events cleared
-void CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_MULTI_BITS(void** state)
+// Given: set bits with seperated call
+// When: wait which causes timeout in various condition
+// Then: return bits_to_set and event not cleared
+void CTS_iot_os_eventgroup_wait_bits_MULTIPLE_SET(void** state)
 {
     iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
+    struct eventgroup_double_set_test_data test_data[] = {
+            {BIT_0, BIT_1, BIT_1, BIT_0 | BIT_1, 1, 3},
+            {BIT_0, BIT_1, BIT_1, BIT_0 | BIT_1, 0, 3},
+            {BIT_0, BIT_1, BIT_1 | BIT_3, BIT_0 | BIT_1, 1, 3},
+            {BIT_0, BIT_1, BIT_1 | BIT_3, BIT_0 | BIT_1, 0, 3},
+            {BIT_0 | BIT_1, BIT_1 | BIT_2, BIT_0, BIT_0 | BIT_1 | BIT_2, 1, 3},
+            {BIT_0 | BIT_1, BIT_1 | BIT_2, BIT_0, BIT_0 | BIT_1 | BIT_2, 0, 3},
+            {BIT_0 | BIT_1, BIT_1 | BIT_2, BIT_ALL, BIT_0 | BIT_1 | BIT_2, 1, 3},
+            {BIT_0 | BIT_1, BIT_1 | BIT_2, BIT_ALL, BIT_0 | BIT_1 | BIT_2, 0, 3},
+    };
 
-    // Given: set bit 0
-    result = iot_os_eventgroup_set_bits(event_group, BIT_0);
-    assert_int_equal(result, BIT_0);
-    // When: wait until any of bit 0, 3 set
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_0 | BIT_3, 0, 0, 5);
-    // Then: get bit 0
-    assert_int_equal(result, BIT_0);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, BIT_0);
-}
-
-// This test purposed to test return value and event clearance
-// Given: single bit is set to bits_to_set
-// When: wait with wait_for_all_bits enabled, but clear_on_exit disabled to make timeout
-// Then: return bits_to_set and all events cleared
-void CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_FOR_ALL_BITS_TIMEOUT(void** state)
-{
-    iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
-
-    // Given: set bit 0
-    result = iot_os_eventgroup_set_bits(event_group, BIT_0);
-    assert_int_equal(result, BIT_0);
-    // When: wait until any of bit 0, 3 set
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_0 | BIT_3, 0, 1, 5);
-    // Then: get bit 0
-    assert_int_equal(result, BIT_0);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, BIT_0);
-}
-
-// This test purposed to test return value and event clearance
-// Given: single bit is set to bits_to_set
-// When: wait with wait_for_all_bits, clear_on_exit enabled to make timeout
-// Then: return bits_to_set and all events cleared
-void CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_WAIT_FOR_ALL_BITS_TIMEOUT(void** state)
-{
-    iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
-
-    // Given: set bit 0
-    result = iot_os_eventgroup_set_bits(event_group, BIT_0);
-    assert_int_equal(result, BIT_0);
-    // When: wait until any of bit 0, 3 set
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_0 | BIT_3, 1, 1, 5);
-    // Then: get bit 0
-    assert_int_equal(result, BIT_0);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, BIT_0);
-}
-
-// This test purposed to test return value and event clearance
-// Given: single bit is set to bits_to_set
-// When: wait any bits with clear_on_exit option
-// Then: return bits_to_set and all events cleared
-void CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_ANY_BITS_WAIT(void** state)
-{
-    iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
-
-    // Given: set bit 0
-    result = iot_os_eventgroup_set_bits(event_group, BIT_0);
-    assert_int_equal(result, BIT_0);
-    // When: wait until any of bits set (clear_on_exit true)
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_ALL, 1, 0, 5);
-    // Then: get bits_to_set (0)
-    assert_int_equal(result, BIT_0);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, 0);
-}
-
-// This test purposed to test return value and event clearance
-// Given: multiple bits are set to bits_to_set
-// When: wait multiple bits with wait_for_all_bits enabled, but clear_on_exit disabled.
-// Then: return bits_to_set and events remained
-void CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_ALL_BITS(void** state)
-{
-    iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
-
-    // Given: set bit 0, 3
-    result = iot_os_eventgroup_set_bits(event_group, BIT_0 | BIT_3);
-    assert_int_equal(result, BIT_0 | BIT_3);
-    // When: wait until both of bit 0, 3 set
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_0 | BIT_3, 0, 1, 5);
-    // Then: get bit 0, 3
-    assert_int_equal(result, BIT_0 | BIT_3);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, BIT_0 | BIT_3);
-}
-
-// This test purposed to test return value and event clearance
-// Given: multiple bits are set to bits_to_set
-// When: wait different bits to make timeout with wait_for_all_bits enabled, but clear_on_exit disabled.
-// Then: return bits_to_set and events remained
-void CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WITH_TIMEOUT(void** state)
-{
-    iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
-    unsigned int result = 0;
-
-    // Given: set bit 1, 2
-    result = iot_os_eventgroup_set_bits(event_group, BIT_1 | BIT_2);
-    assert_int_equal(result, BIT_1 | BIT_2);
-    // When: wait until both of bit 0, 3 set
-    result = iot_os_eventgroup_wait_bits(event_group, BIT_0 | BIT_3, 0, 1, 3);
-    // Then: get value without bit 0, 3 - timeout
-    assert_int_equal(result, BIT_1 | BIT_2);
-    // Teardown
-    result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
-    assert_int_equal(result, BIT_1 | BIT_2);
+    for (int i = 0; i < sizeof(test_data)/sizeof(struct eventgroup_double_set_test_data); i++) {
+        int result;
+        unsigned int event;
+        // Given
+        result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set_1);
+        assert_int_equal(result, IOT_OS_TRUE);
+        result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set_2);
+        assert_int_equal(result, IOT_OS_TRUE);
+        // When
+        event = iot_os_eventgroup_wait_bits(event_group, test_data[i].bits_to_wait_for, test_data[i].clear_on_exit, test_data[i].wait_time_ms);
+        // Then
+        assert_int_equal(event, test_data[i].expected_return_for_wait);
+        // Teardown
+        result = iot_os_eventgroup_clear_bits(event_group, BIT_ALL);
+        assert_int_equal(result, IOT_OS_TRUE);
+    }
 }
 
 int CTS_iot_os_queue_test()
@@ -288,17 +240,12 @@ int CTS_iot_os_queue_test()
 int CTS_iot_os_eventgroup_test()
 {
     const struct CMUnitTest CTS_iot_os_eventgroup_api[] = {
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_SINGLE_BIT_WAIT),
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_MULTI_BITS_WAIT),
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_SINGLE_BIT_WAIT),
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_FOR_ALL_BITS_TIMEOUT),
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_WAIT_FOR_ALL_BITS_TIMEOUT),
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_MULTI_BITS),
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_CLEAR_ON_EXIT_ANY_BITS_WAIT),
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WAIT_ALL_BITS),
-            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_NOT_CLEAR_ON_EXIT_WITH_TIMEOUT),
+            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_SET_SINGLE_BIT),
+            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_SET_MULTI_BITS),
+            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_TIMEOUT),
+            cmocka_unit_test(CTS_iot_os_eventgroup_wait_bits_MULTIPLE_SET),
     };
 
     return cmocka_run_group_tests_name("iot_os_eventgroup", CTS_iot_os_eventgroup_api,
-                CTS_iot_os_eventgroup_wait_bits_SETUP, CTS_iot_os_eventgroup_wait_bits_TEARDOWN);
+                                       CTS_iot_os_eventgroup_wait_bits_SETUP, CTS_iot_os_eventgroup_wait_bits_TEARDOWN);
 }
