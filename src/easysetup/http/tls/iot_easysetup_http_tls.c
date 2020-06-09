@@ -326,7 +326,7 @@ static void es_mbedtls_task(void *data)
 					payload = buf;
 					break;
 				} else {
-					err = es_msg_parser(buf, &payload, &cmd, &type, &content_len);
+					err = es_msg_parser(buf, sizeof(buf), &payload, &cmd, &type, &content_len);
 					if ((err == IOT_ERROR_NONE) && (content_len > strlen((char *)payload)))
 						continue;
 					else
