@@ -360,7 +360,7 @@ iot_error_t _es_confirm_check_manager(struct iot_context *ctx, enum ownership_va
 		case OVF_BIT_BUTTON:
 			IOT_INFO("The button confirmation is requested");
 
-			curr_event = iot_os_eventgroup_wait_bits(ctx->iot_events, IOT_EVENT_BIT_EASYSETUP_CONFIRM, false, false, ES_CONFIRM_MAX_DELAY);
+			curr_event = iot_os_eventgroup_wait_bits(ctx->iot_events, IOT_EVENT_BIT_EASYSETUP_CONFIRM, false, ES_CONFIRM_MAX_DELAY);
 			IOT_DEBUG("curr_event = %d", curr_event);
 
 			if (curr_event & IOT_EVENT_BIT_EASYSETUP_CONFIRM) {
