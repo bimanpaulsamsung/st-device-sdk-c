@@ -742,8 +742,6 @@ iot_error_t _es_cloud_prov_parse(char *in_payload)
 {
 	struct iot_cloud_prov_data *cloud_prov = NULL;
 	char *full_url = NULL;
-	char *location_id_str = NULL;
-	char *room_id_str = NULL;
 	JSON_H *root = NULL;
 	iot_error_t err = IOT_ERROR_NONE;
 	url_parse_t url = { .protocol = NULL, .domain = NULL, .port = 0};
@@ -774,27 +772,6 @@ iot_error_t _es_cloud_prov_parse(char *in_payload)
 		IOT_ERROR("failed to parse broker url");
 		err = IOT_ERROR_EASYSETUP_INVALID_BROKER_URL;
 		goto cloud_parse_out;
-	}
-
-	location_id_str = _es_json_parse_string(root, "locationId");
-	err = iot_util_convert_str_uuid(location_id_str, &cloud_prov->location_id);
-	if (err) {
-		IOT_ERROR("failed to convert locationId");
-		err = IOT_ERROR_EASYSETUP_INVALID_BROKER_URL;
-		goto cloud_parse_out;
-	}
-
-	room_id_str = _es_json_parse_string(root, "roomId");
-	/* roomId is optional */
-	if (room_id_str) {
-		err = iot_util_convert_str_uuid(room_id_str, &cloud_prov->room_id);
-		if (err != IOT_ERROR_NONE) {
-			IOT_ERROR("failed to convert roomId");
-			err = IOT_ERROR_EASYSETUP_INVALID_ROOMID;
-			goto cloud_parse_out;
-		}
-	} else {
-		IOT_INFO("no roomId");
 	}
 
 	if ((cloud_prov->label = _es_json_parse_string(root, "deviceName")) == NULL) {
@@ -831,12 +808,6 @@ cloud_parse_out:
 	}
 	if (cloud_prov) {
 		iot_os_free(cloud_prov);
-	}
-	if (location_id_str) {
-		iot_os_free(location_id_str);
-	}
-	if (room_id_str) {
-		iot_os_free(room_id_str);
 	}
 	if (root) {
 		JSON_DELETE(root);
