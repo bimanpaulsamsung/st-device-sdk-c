@@ -17,6 +17,7 @@
  * limitations under the License.
  *
  ******************************************************************/
+#include <stdlib.h>
 #include "iot_bsp_fs.h"
 #include "iot_debug.h"
 #include <ti/drivers/net/wifi/simplelink.h>
@@ -27,13 +28,13 @@
 
 static int Init = IOT_BSP_FS_NOT_INITED;  // Status of initialization
 
-iot_error_t iot_bsp_fs_init()
+iot_error_t iot_bsp_fs_init(void)
 {
 	Init = IOT_BSP_FS_INITED;
 	return IOT_ERROR_NONE;
 }
 
-iot_error_t iot_bsp_fs_deinit()
+iot_error_t iot_bsp_fs_deinit(void)
 {
 	Init = IOT_BSP_FS_NOT_INITED;
 	IOT_DEBUG("BSP FS is deinited!");
@@ -44,6 +45,9 @@ iot_error_t iot_bsp_fs_open(const char* filename, iot_bsp_fs_open_mode_t mode, i
 {
 	if (Init == IOT_BSP_FS_NOT_INITED)
 		return IOT_ERROR_UNINITIALIZED;
+
+	if(!filename || !handle)
+		return IOT_ERROR_FS_OPEN_FAIL;
 
 	if (strlen(filename) >= sizeof(handle->filename)) {
 		IOT_ERROR("File name is to long");
@@ -83,33 +87,35 @@ iot_error_t iot_bsp_fs_open(const char* filename, iot_bsp_fs_open_mode_t mode, i
 
 iot_error_t iot_bsp_fs_open_from_stnv(const char* filename, iot_bsp_fs_handle_t* handle)
 {
-	if (Init == IOT_BSP_FS_NOT_INITED)
-		return IOT_ERROR_UNINITIALIZED;
-
 	return iot_bsp_fs_open(filename, FS_READONLY, handle);
 }
 
-iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, unsigned int length)
+iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, size_t *length)
 {
 	if (Init == IOT_BSP_FS_NOT_INITED)
 		return IOT_ERROR_UNINITIALIZED;
-
+	if (!buffer)
+		return IOT_ERROR_FS_READ_FAIL;
 	int status;
 	IOT_DEBUG("Handle.fd value is %d", handle.fd);
-	status = sl_FsRead(handle.fd, 0, buffer, length);
+	status = sl_FsRead(handle.fd, 0, buffer, *length);
 	if (status < 0)
 		return IOT_ERROR_FS_READ_FAIL;
+	else
+		*length = status;
 
 	return IOT_ERROR_NONE;
 }
 
-iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, unsigned int length)
+iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, size_t length)
 {
 	if (Init == IOT_BSP_FS_NOT_INITED)
 		return IOT_ERROR_UNINITIALIZED;
+	if (!data)
+		return IOT_ERROR_FS_WRITE_FAIL;
 
 	int status;
-	status = sl_FsWrite(handle.fd, 0, data, length + 1);
+	status = sl_FsWrite(handle.fd, 0, data, length);
 	IOT_DEBUG("Handle.fd value is %d, file name is %s", handle.fd, handle.filename);
 	if (status < 0)
 		return IOT_ERROR_FS_WRITE_FAIL;
@@ -135,16 +141,18 @@ iot_error_t iot_bsp_fs_remove(const char* filename)
 {
 	if (Init == IOT_BSP_FS_NOT_INITED)
 		return IOT_ERROR_UNINITIALIZED;
+	if (!filename)
+		return IOT_ERROR_FS_REMOVE_FAIL;
 
 	unsigned short int status;
 	IOT_DEBUG("Remove file name is %s", filename);
-    status = sl_FsDel(filename, 0);
-    if (status < 0) {
+	status = sl_FsDel(filename, 0);
+	if (status < 0) {
 		if (status == SL_ERROR_FS_FILE_NOT_EXISTS)
 			return IOT_ERROR_FS_NO_FILE;
-		return IOT_ERROR_FS_REMOVE_FAIL;
 		IOT_ERROR("Remove file name failed is %s status %d", filename, status);
-    }
+		return IOT_ERROR_FS_REMOVE_FAIL;
+	}
 
 	return IOT_ERROR_NONE;
 }
@@ -157,7 +165,7 @@ typedef struct _ATCmdFile_FileListEntry_t_
 
 #define MAX_FILES_ENTRIES (6)
 
-iot_error_t iot_bsp_fs_list()
+iot_error_t iot_bsp_fs_list(void)
 {
     int32_t ret = 1;
     int32_t index;
