@@ -48,11 +48,12 @@ if(ENABLE_STDK_UNIT_TEST)
                    TC_UTIL_easysetup_common.h
                    TC_UTIL_easysetup_common.c
                    TC_FUNC_iot_easysetup_d2d.c
-                   TC_FUNC_iot_easysetup_crypto.c
                    TC_FUNC_iot_main.c
                    TC_FUNC_iot_mqtt_client.c
                    TC_FUNC_iot_security_common.c
                    TC_FUNC_iot_security_crypto.c
+                   TC_FUNC_iot_security_ecdh.c
+                   TC_FUNC_iot_security_manager.c
                    TC_FUNC_iot_security_storage.c
                    TC_FUNC_iot_security_helper.c
                    TC_FUNC_iot_security_helper_ed25519.c
