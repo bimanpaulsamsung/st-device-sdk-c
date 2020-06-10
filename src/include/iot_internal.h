@@ -338,5 +338,16 @@ iot_error_t iot_misc_info_store(iot_misc_info_t type, const void *in_data);
  */
 iot_error_t iot_get_random_id_str(char *str, size_t max_sz);
 
+/**
+ * @brief	provide device token (internal API)
+ * @details	this function provides token (e.g., JWT, CWT) to Media SDK.
+ * @param[in]	ctx iot-core context
+ * @param[out]	token null-terminated token string.
+ * @retval	IOT_ERROR_NONE success
+ * @retval	IOT_ERROR_NV_DATA_ERROR failed to get serial number
+ * @retval	IOT_ERROR_WEBTOKEN_FAIL failed to generate a token
+ */
+iot_error_t iot_get_device_token(struct iot_context *ctx, char **token);
+
 #endif /* _IOT_INTERNAL_H_ */
 

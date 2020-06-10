@@ -29,6 +29,7 @@
 #include "iot_util.h"
 #include "iot_uuid.h"
 #include "iot_bsp_wifi.h"
+#include "iot_wt.h"
 
 #include "JSON.h"
 
@@ -1198,6 +1199,53 @@ iot_error_t iot_get_random_id_str(char *str, size_t max_sz)
 	return err;
 }
 
+iot_error_t iot_get_device_token(struct iot_context *ctx, char **token)
+{
+	iot_error_t err;
+	iot_wt_params_t wt_params;
+	iot_security_buffer_t sn_buf = { 0 };
+	iot_security_buffer_t token_buf = { 0 };
+
+	if (!ctx) {
+		IOT_ERROR("iot context is null");
+		return IOT_ERROR_INVALID_ARGS;
+	}
+
+	if (!token) {
+		IOT_ERROR("token buffer is null");
+		return IOT_ERROR_INVALID_ARGS;
+	}
+
+	err = iot_nv_get_serial_number((char **)&sn_buf.p, &sn_buf.len);
+	if (err) {
+		IOT_ERROR("iot_nv_get_serial_number = %d", err);
+		return err;
+	}
+
+	wt_params.sn = (char *)sn_buf.p;
+	wt_params.sn_len = sn_buf.len;
+
+	if (!ctx || !ctx->devconf.mnid) {
+		IOT_ERROR("devconf.mnid is null");
+		free(wt_params.sn);
+		return IOT_ERROR_INVALID_ARGS;
+	} else {
+		wt_params.mnid = ctx->devconf.mnid;
+		wt_params.mnid_len = strlen(wt_params.mnid);
+	}
+
+	err = iot_wt_create((const iot_wt_params_t *)&wt_params, &token_buf);
+	if (err) {
+		IOT_ERROR("iot_wt_create = %d", err);
+		free(wt_params.sn);
+		return err;
+	}
+
+	*token = (char *)token_buf.p;
+	free(wt_params.sn);
+
+	return IOT_ERROR_NONE;
+}
 /**************************************************************
 *                       Synchronous Call                      *
 **************************************************************/
