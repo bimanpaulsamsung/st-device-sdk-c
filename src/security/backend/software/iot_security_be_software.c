@@ -25,6 +25,11 @@
 #include "security/iot_security_helper.h"
 #include "security/backend/iot_security_be.h"
 
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ecdh.h"
+#include "mbedtls/cipher.h"
+
 STATIC_FUNCTION
 iot_error_t _iot_security_be_check_context_and_params_is_valid(iot_security_context_t *context, iot_security_sub_system_t sub_system)
 {
@@ -235,6 +240,11 @@ iot_error_t _iot_security_be_software_pk_load_ed25519_key(iot_security_context_t
 		IOT_ERROR("failed to malloc for key_buf");
 		_iot_security_be_software_buffer_free(&key_b64_buf);
 		return IOT_ERROR_MEM_ALLOC;
+	}
+
+	/* remove null character for base64 decoding */
+	if (strlen((char *)key_b64_buf.p) == (key_b64_buf.len - 1)) {
+		key_b64_buf.len -= 1;
 	}
 
 	err = iot_security_base64_decode(key_b64_buf.p, key_b64_buf.len, key_buf.p, key_buf.len, &olen);
@@ -1086,6 +1096,11 @@ iot_error_t _iot_security_be_software_ecdh_load_ed25519(iot_security_context_t *
 		IOT_ERROR("failed to malloc for seckey_buf");
 		err = IOT_ERROR_MEM_ALLOC;
 		goto exit_free_seckey_b64;
+	}
+
+	/* remove null character for base64 decoding */
+	if (strlen((char *)seckey_b64_buf.p) == (seckey_b64_buf.len - 1)) {
+		seckey_b64_buf.len -= 1;
 	}
 
 	err = iot_security_base64_decode(seckey_b64_buf.p, seckey_b64_buf.len, seckey_buf.p, seckey_buf.len, &olen);
