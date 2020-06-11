@@ -193,7 +193,7 @@ struct eventgroup_double_set_test_data {
     unsigned int wait_time_ms;
 };
 // This test purposed to test return value and event clearance
-// Given: set bits with seperated call
+// Given: set bits with separated call
 // When: wait which causes timeout in various condition
 // Then: return bits_to_set and event not cleared
 void CTS_iot_os_eventgroup_wait_bits_MULTIPLE_SET(void** state)
