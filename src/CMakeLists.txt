@@ -52,7 +52,6 @@ add_custom_command(
 
 add_library(iotcore
         iot_api.c
-        iot_crypto.c
         iot_capability.c
         iot_wt.c
         iot_main.c
@@ -91,5 +90,4 @@ add_subdirectory(port/os/posix)
 add_subdirectory(port/net)
 add_subdirectory(easysetup)
 add_subdirectory(mqtt)
-add_subdirectory(crypto)
 add_subdirectory(security)
