@@ -27,6 +27,7 @@
 #include "iot_nv_data.h"
 #include "iot_util.h"
 #include "iot_debug.h"
+#include "security/iot_security_helper.h"
 
 #define HASH_SIZE (4)
 #define PIN_SIZE	8
@@ -38,8 +39,8 @@
 iot_error_t iot_easysetup_create_ssid(struct iot_devconf_prov_data *devconf, char *ssid, size_t ssid_len)
 {
 	char *serial = NULL;
-	unsigned char hash_buffer[IOT_CRYPTO_SHA256_LEN] = { 0, };
-	unsigned char base64url_buffer[IOT_CRYPTO_CAL_B64_LEN(IOT_CRYPTO_SHA256_LEN)] = { 0, };
+	unsigned char hash_buffer[IOT_SECURITY_SHA256_LEN] = { 0, };
+	unsigned char base64url_buffer[IOT_SECURITY_B64_ENCODE_LEN(IOT_SECURITY_SHA256_LEN)] = { 0, };
 	size_t base64_written = 0;
 	char ssid_build[33] = { 0, };
 	unsigned char last_sn[HASH_SIZE + 1] = { 0,};
@@ -52,20 +53,25 @@ iot_error_t iot_easysetup_create_ssid(struct iot_devconf_prov_data *devconf, cha
 
 	err = iot_nv_get_serial_number(&serial, &length);
 	if (err != IOT_ERROR_NONE) {
-		IOT_ERROR("Failed to get serial number : %d\n", err);
+		IOT_ERROR("Failed to get serial number (%d)", err);
 		goto out;
 	}
-	err = iot_crypto_sha256((unsigned char*)serial, length, hash_buffer);
+	err = iot_security_sha256((unsigned char*)serial, length, hash_buffer, sizeof(hash_buffer));
 	if (err != IOT_ERROR_NONE) {
-		IOT_ERROR("Failed sha256 (str: %s, len: %zu\n", serial, length);
+		IOT_ERROR("Failed sha256 (%d)", err);
 		goto out;
 	}
-	err = iot_crypto_base64_encode_urlsafe(hash_buffer, sizeof(hash_buffer),
+	err = iot_security_base64_encode_urlsafe(hash_buffer, sizeof(hash_buffer),
 						base64url_buffer, sizeof(base64url_buffer), &base64_written);
 	if (err != IOT_ERROR_NONE)
 		goto out;
 
 	if (base64_written >= HASH_SIZE) {
+		if (devconf->hashed_sn) {
+			iot_os_free(devconf->hashed_sn);
+			devconf->hashed_sn = NULL;
+		}
+
 		devconf->hashed_sn = iot_os_malloc(base64_written + 1);
 		if (!devconf->hashed_sn) {
 			err = IOT_ERROR_MEM_ALLOC;
@@ -75,7 +81,7 @@ iot_error_t iot_easysetup_create_ssid(struct iot_devconf_prov_data *devconf, cha
 		memcpy(devconf->hashed_sn, base64url_buffer, base64_written);
 		memcpy(hashed_sn, base64url_buffer, HASH_SIZE);
 	} else {
-		err = IOT_ERROR_CRYPTO_BASE64_URLSAFE;
+		err = IOT_ERROR_SECURITY_BASE64_URL_ENCODE;
 		goto out;
 	}
 	hashed_sn[HASH_SIZE] = '\0';
@@ -312,7 +318,7 @@ STATIC_FUNCTION
 iot_error_t _es_confirm_check_manager(struct iot_context *ctx, enum ownership_validation_feature confirm_feature, char *sn)
 {
 	char *dev_sn = NULL;
-	unsigned int curr_event = 0;
+	unsigned char curr_event = 0;
 	size_t devsn_len;
 	iot_error_t err = IOT_ERROR_NONE;
 
@@ -361,7 +367,7 @@ iot_error_t _es_confirm_check_manager(struct iot_context *ctx, enum ownership_va
 			IOT_INFO("The button confirmation is requested");
 
 			curr_event = iot_os_eventgroup_wait_bits(ctx->iot_events, IOT_EVENT_BIT_EASYSETUP_CONFIRM, false, ES_CONFIRM_MAX_DELAY);
-			IOT_DEBUG("curr_event = %d", curr_event);
+			IOT_DEBUG("curr_event = 0x%x", curr_event);
 
 			if (curr_event & IOT_EVENT_BIT_EASYSETUP_CONFIRM) {
 				IOT_INFO("confirm");
