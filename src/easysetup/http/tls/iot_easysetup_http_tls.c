@@ -317,21 +317,16 @@ static void es_mbedtls_task(void *data)
 						IOT_ERROR("mbedtls_ssl_read returned -0x%x", -ret);
 				}
 				continue;
-			}
-
-			len = ret;
-
-			if (ret > 0) {
+			} else {
 				if (content_len > 0) {
 					payload = buf;
-					break;
 				} else {
 					err = es_msg_parser(buf, sizeof(buf), &payload, &cmd, &type, &content_len);
-					if ((err == IOT_ERROR_NONE) && (content_len > strlen((char *)payload)))
+					if ((err == IOT_ERROR_NONE) && (type == D2D_POST)
+										&&	payload && (content_len > strlen((char *)payload)))
 						continue;
-					else
-						break;
 				}
+				break;
 			}
 		}
 		while (1);
