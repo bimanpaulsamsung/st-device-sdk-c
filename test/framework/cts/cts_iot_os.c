@@ -87,7 +87,7 @@ int CTS_iot_os_eventgroup_wait_bits_TEARDOWN(void** state)
 }
 
 struct eventgroup_single_set_test_data {
-    unsigned int bits_to_set;
+    unsigned char bits_to_set;
     unsigned int bits_to_wait_for;
     unsigned int expected_return_for_wait;
     int clear_on_exit;
@@ -109,7 +109,7 @@ void CTS_iot_os_eventgroup_wait_bits_SET_SINGLE_BIT(void** state)
 
     for (int i = 0; i < sizeof(test_data)/sizeof(struct eventgroup_single_set_test_data); i++) {
         int result;
-        unsigned int event;
+        unsigned char event;
         // Given
         result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set);
         assert_int_equal(result, IOT_OS_TRUE);
@@ -137,7 +137,7 @@ void CTS_iot_os_eventgroup_wait_bits_SET_MULTI_BITS(void** state)
 
     for (int i = 0; i < sizeof(test_data)/sizeof(struct eventgroup_single_set_test_data); i++) {
         int result;
-        unsigned int event;
+        unsigned char event;
         // Given
         result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set);
         assert_int_equal(result, IOT_OS_TRUE);
@@ -170,7 +170,7 @@ void CTS_iot_os_eventgroup_wait_bits_TIMEOUT(void** state)
 
     for (int i = 0; i < sizeof(test_data)/sizeof(struct eventgroup_single_set_test_data); i++) {
         int result;
-        unsigned int event;
+        unsigned char event;
         // Given
         result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set);
         assert_int_equal(result, IOT_OS_TRUE);
@@ -212,7 +212,7 @@ void CTS_iot_os_eventgroup_wait_bits_MULTIPLE_SET(void** state)
 
     for (int i = 0; i < sizeof(test_data)/sizeof(struct eventgroup_double_set_test_data); i++) {
         int result;
-        unsigned int event;
+        unsigned char event;
         // Given
         result = iot_os_eventgroup_set_bits(event_group, test_data[i].bits_to_set_1);
         assert_int_equal(result, IOT_OS_TRUE);
