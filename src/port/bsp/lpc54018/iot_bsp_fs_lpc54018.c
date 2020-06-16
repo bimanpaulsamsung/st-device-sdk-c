@@ -200,7 +200,7 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, size_
 	nv_storage_init();
 
 	device_mutex_lock();
-	if (false == mflash_save_file(handle.filename, (uint8_t *)data, length + 1)) {
+	if (false == mflash_save_file(handle.filename, (uint8_t *)data, length)) {
 		IOT_ERROR("Write %s failed",handle.filename);
 		ret = IOT_ERROR_FS_WRITE_FAIL;
 	}

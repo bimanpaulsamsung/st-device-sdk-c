@@ -140,15 +140,16 @@ static void nv_storage_init(void)
 	intitialized = true;
 }
 
-static long nv_storage_read(const char *store, uint8_t *buf, size_t size)
+static int nv_storage_read(const char *store, uint8_t *buf, size_t *size)
 {
 	int idx;
 	size_t cmp_size, hash;
 	uint8_t *tempbuf;
 	uint32_t offset;
+	size_t read_size;
 
 	nv_storage_init();
-	IOT_INFO("read %s size %d", store, size);
+	IOT_INFO("read %s size %d", store, *size);
 
 	nv_mutex_lock();
 	hash = simple_str_hash(store, strlen(store));
@@ -159,14 +160,15 @@ static long nv_storage_read(const char *store, uint8_t *buf, size_t size)
 		return -1;
 	}
 	nv_mutex_unlock();
+	read_size = (nv_table[idx].size > *size) ? *size : nv_table[idx].size;
 
-	IOT_INFO("[read] address:0x%x, size:%d\n",nv_table[idx].addr, nv_table[idx].size);
+	IOT_INFO("[read] address:0x%x, size:%d\n",nv_table[idx].addr, read_size);
 	device_mutex_lock();
 	offset = nv_table[idx].addr - nv_base_address;
-	MicoFlashRead(MICO_PARTITION_USER, &offset , buf, size);
+	MicoFlashRead(MICO_PARTITION_USER, &offset , buf, read_size);
 	device_mutex_unlock();
 
-	cmp_size = size;
+	cmp_size = read_size;
 	tempbuf = malloc(cmp_size);
 	if (!tempbuf) {
 		IOT_ERROR("failed to malloc for tempbuf");
@@ -175,13 +177,16 @@ static long nv_storage_read(const char *store, uint8_t *buf, size_t size)
 	memset(tempbuf, 0xFF, cmp_size);
 	if (memcmp(tempbuf, buf, cmp_size) == 0) {
 		IOT_ERROR("flash was erased. write default data\n");
-		size = IOT_ERROR_FS_NO_FILE;
+		free(tempbuf);
+		return -2;
 	}
+
+	*size = read_size;
 	free(tempbuf);
-	return size;
+	return 0;
 }
 
-static long nv_storage_write(const char *store, uint8_t *buf, size_t size)
+static int nv_storage_write(const char *store, uint8_t *buf, size_t size)
 {
 	int idx;
 	size_t hash;
@@ -292,9 +297,9 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, size_t *le
 	if (!buffer || *length <= 0 || *length > STDK_NV_SECTOR_SIZE)
 		return IOT_ERROR_FS_READ_FAIL;
 
-	ret = nv_storage_read(handle.filename, buffer, *length);
-	IOT_ERROR_CHECK(ret == -1, IOT_ERROR_FS_READ_FAIL, "nvs read fail ");
-	IOT_ERROR_CHECK(ret == IOT_ERROR_FS_NO_FILE, IOT_ERROR_FS_NO_FILE, "nvs no file");
+	ret = nv_storage_read(handle.filename, buffer, length);
+	IOT_ERROR_CHECK(ret < -1, IOT_ERROR_FS_NO_FILE, "nvs no file");
+	IOT_ERROR_CHECK(ret < 0, IOT_ERROR_FS_READ_FAIL, "nvs read fail ");
 
 	return IOT_ERROR_NONE;
 }
@@ -306,7 +311,7 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, size_
 	if (!data || length <= 0 || length > STDK_NV_SECTOR_SIZE)
 		return IOT_ERROR_FS_WRITE_FAIL;
 
-	ret = nv_storage_write(handle.filename, data, length + 1);
+	ret = nv_storage_write(handle.filename, data, length);
 	IOT_ERROR_CHECK(ret <= 0, IOT_ERROR_FS_WRITE_FAIL, "nvs write fail ");
 
 	return IOT_ERROR_NONE;

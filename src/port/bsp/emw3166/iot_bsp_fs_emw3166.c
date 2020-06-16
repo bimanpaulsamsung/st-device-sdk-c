@@ -186,9 +186,9 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, size_t *le
 
 	err = mico_filesystem_file_read(fh, data, fh->data.fatfs.fsize, &bytesread);
 	if (err == kNoErr) {
-		IOT_INFO("fs read success, %u bytes", bytesread);
-		bytesread = (*length < bytesread)? *length : bytesread;
+		bytesread = ((strlen(data) + 1) < bytesread)? (strlen(data) + 1) : bytesread;
 		memcpy(buffer, data, bytesread);
+		IOT_INFO("bsp fs read %u bytes, data length %d", bytesread, strlen(data));
 		*length = bytesread;
 	} else {
 		IOT_ERROR("mico fs ret %d, read bytes %d", err, bytesread);
@@ -210,8 +210,8 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char* data, size_
 	fh = _get_mico_fh(handle.fd);
 	IOT_ERROR_CHECK(fh == NULL, IOT_ERROR_FS_WRITE_FAIL, "no mico file handle for fd");
 
-	err = mico_filesystem_file_write( fh, data, length + 1, &byteswritten );
-	IOT_INFO("ret %d, fs write %u bytes", err, byteswritten);
+	err = mico_filesystem_file_write(fh, data, length, &byteswritten);
+	IOT_INFO("ret %d, length %d, fs write %u bytes", err, length, byteswritten);
 
 	return (err == kNoErr)? IOT_ERROR_NONE : IOT_ERROR_FS_WRITE_FAIL;
 }
