@@ -257,8 +257,6 @@ static void es_mbedtls_task(void *data)
 
 	do
 	{
-		mbedtls_net_free(&client_fd);
-
 		mbedtls_ssl_session_reset(&ssl);
 
 		content_len = 0;
@@ -362,6 +360,17 @@ static void es_mbedtls_task(void *data)
 				continue;
 			}
 		}
+
+		shutdown( client_fd.fd, SHUT_RDWR );
+		while (1) {
+			memset(buf, 0, sizeof(buf));
+			ret = mbedtls_ssl_read(&ssl, (unsigned char *) buf, len);
+			if (ret)
+				continue;
+			break;
+		}
+		close( client_fd.fd );
+		client_fd.fd = -1;
 	}
 	while (1);
 
