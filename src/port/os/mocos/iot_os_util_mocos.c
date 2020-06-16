@@ -69,7 +69,7 @@ int iot_os_thread_create(void * thread_function, const char* name, int stack_siz
 {
 	OSStatus ret = kNoErr;
 
-	ret = mico_rtos_create_thread(thread_handle, priority, name, thread_function, stack_size, data);
+	ret = mico_rtos_create_thread(thread_handle, priority, name, thread_function, stack_size, (mico_thread_arg_t)data);
 	
 	return (ret == kNoErr) ? IOT_OS_TRUE : IOT_OS_FALSE;
 }
@@ -179,7 +179,7 @@ static void _unlock_eventgroup()
 	mico_rtos_unlock_mutex(&eg_mutex);
 }
 
-static int _eventgroup_check_cache(iot_moc_eventgroup *eg, unsigned int bits_to_wait_for)
+static int _eventgroup_check_cache(iot_moc_eventgroup *eg, unsigned char bits_to_wait_for)
 {
 	int i = 0;
 	int bits = 0;
@@ -197,7 +197,7 @@ static int _eventgroup_check_cache(iot_moc_eventgroup *eg, unsigned int bits_to_
 	return bits;
 }
 
-static void _eventgroup_set_cache(iot_moc_eventgroup *eg, unsigned int bits_to_set)
+static void _eventgroup_set_cache(iot_moc_eventgroup *eg, unsigned char bits_to_set)
 {
 	int i = 0;
 
@@ -205,14 +205,14 @@ static void _eventgroup_set_cache(iot_moc_eventgroup *eg, unsigned int bits_to_s
 
 	for (i = 0; i < EG_MAX_CACHE; i++) {
 		if (eg->cache_bits[i] == 0) {
-			eg->cache_bits[i] = bits_to_set;
+			eg->cache_bits[i] = (uint16_t)bits_to_set;
 			break;
 		}
 	}
 	_unlock_eventgroup();
 }
 
-static que_for_bmp* _eventgroup_get_available_res(iot_moc_eventgroup *eg, unsigned int bits_to_wait_for)
+static que_for_bmp* _eventgroup_get_available_res(iot_moc_eventgroup *eg, unsigned char bits_to_wait_for)
 {
 	que_for_bmp *list;
 	que_for_bmp *new_que;
@@ -224,7 +224,7 @@ static que_for_bmp* _eventgroup_get_available_res(iot_moc_eventgroup *eg, unsign
 	}
 	
 	if (!list->used) {
-		list->bits = bits_to_wait_for;
+		list->bits = (uint16_t)bits_to_wait_for;
 		list->used = 1;
 		_unlock_eventgroup();
 		return list;
@@ -234,7 +234,7 @@ static que_for_bmp* _eventgroup_get_available_res(iot_moc_eventgroup *eg, unsign
 	IOT_ERROR_CHECK(new_que == NULL, NULL, "malloc queue failed.");
 	memset(new_que, 0, sizeof(que_for_bmp));
 	new_que->used = 1;
-	new_que->bits = bits_to_wait_for;
+	new_que->bits = (uint16_t)bits_to_wait_for;
 	mico_rtos_init_queue(&new_que->q, "eg_queue", sizeof(int), 2);
 	new_que->fd = mico_create_event_fd(new_que->q);
 
@@ -244,7 +244,7 @@ static que_for_bmp* _eventgroup_get_available_res(iot_moc_eventgroup *eg, unsign
 	return new_que;
 }
 
-static que_for_bmp* _eventgroup_get_res_to_send(iot_moc_eventgroup *eg, unsigned int bits_to_set)
+static que_for_bmp* _eventgroup_get_res_to_send(iot_moc_eventgroup *eg, unsigned char bits_to_set)
 {
 	que_for_bmp *list = NULL;
 
@@ -314,8 +314,8 @@ void iot_os_eventgroup_delete(iot_os_eventgroup* eventgroup_handle)
 	free(eventgroup_handle);
 }
 
-unsigned int iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
-		const unsigned int bits_to_wait_for, const int clear_on_exit, const unsigned int wait_time_ms)
+unsigned char iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
+		const unsigned char bits_to_wait_for, const int clear_on_exit, const unsigned int wait_time_ms)
 {
 	que_for_bmp* eg_res;
 	iot_moc_eventgroup *eg;
@@ -330,11 +330,11 @@ unsigned int iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
 	FD_ZERO(&readfds);
 
 	/*check any cache bits set*/
-	if (qdata = _eventgroup_check_cache(eg, bits_to_wait_for)) {
+	if ((qdata = _eventgroup_check_cache(eg, bits_to_wait_for))) {
 		return qdata;
 	}
 
-	eg_res = _eventgroup_get_available_res(eg,bits_to_wait_for);
+	eg_res = _eventgroup_get_available_res(eg, bits_to_wait_for);
 
 	FD_SET(eg_res->fd, &readfds);
 
@@ -359,7 +359,7 @@ unsigned int iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
 }
 
 int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
-		const unsigned int bits_to_set)
+		const unsigned char bits_to_set)
 {
 	iot_moc_eventgroup *eg;
 	que_for_bmp* eg_res = NULL;
@@ -381,7 +381,7 @@ int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
 }
 
 int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
-		const unsigned int bits_to_clear)
+		const unsigned char bits_to_clear)
 {
 	iot_moc_eventgroup *eg;
 	que_for_bmp* eg_res = NULL;
