@@ -59,6 +59,7 @@ add_library(iotcore
         iot_util.c
         iot_uuid.c
         ${ROOT_CA_SOURCE}
+        iot_dump_log.c
         )
 
 target_link_libraries(iotcore
