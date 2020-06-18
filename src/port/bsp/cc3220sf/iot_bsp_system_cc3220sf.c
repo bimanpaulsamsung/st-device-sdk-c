@@ -25,6 +25,15 @@
 #include <reent.h>
 #include <sys/time.h>
 
+const char* iot_bsp_get_bsp_name()
+{
+	return "cc3220sf";
+}
+
+const char* iot_bsp_get_bsp_version_string()
+{
+	return "";
+}
 
 int _gettimeofday_r(struct _reent* r, struct timeval* tv, void* tz)
 {
