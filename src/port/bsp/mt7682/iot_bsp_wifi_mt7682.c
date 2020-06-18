@@ -368,19 +368,35 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 			&& scan_ap_list[i].bssid[4] == 0 && scan_ap_list[i].bssid[5] == 0) { //mac addr is invalid, skip
 			continue;
 		}
-		memcpy(scan_result[i].ssid, scan_ap_list[i].ssid, strlen((char *)scan_ap_list[i].ssid));
-		memcpy(scan_result[i].bssid, scan_ap_list[i].bssid, IOT_WIFI_MAX_BSSID_LEN);
+		memcpy(scan_result[scan_ap_num].ssid, scan_ap_list[i].ssid, strlen((char *)scan_ap_list[i].ssid));
+		memcpy(scan_result[scan_ap_num].bssid, scan_ap_list[i].bssid, IOT_WIFI_MAX_BSSID_LEN);
 
-		scan_result[i].rssi = scan_ap_list[i].rssi;
-		scan_result[i].freq = iot_util_convert_channel_freq(scan_ap_list[i].channel);
-		scan_result[i].authmode = scan_ap_list[i].auth_mode;
+		scan_result[scan_ap_num].rssi = scan_ap_list[i].rssi;
+		scan_result[scan_ap_num].freq = iot_util_convert_channel_freq(scan_ap_list[i].channel);
+		switch(scan_ap_list[i].auth_mode) {
+		case WIFI_AUTH_MODE_OPEN:
+			scan_result[scan_ap_num].authmode = IOT_WIFI_AUTH_OPEN;
+			break;
+		case WIFI_AUTH_MODE_WPA_PSK:
+			scan_result[scan_ap_num].authmode = IOT_WIFI_AUTH_WPA_PSK;
+			break;
+		case WIFI_AUTH_MODE_WPA2_PSK:
+			scan_result[scan_ap_num].authmode = IOT_WIFI_AUTH_WPA2_PSK;
+			break;
+		case WIFI_AUTH_MODE_WPA_PSK_WPA2_PSK:
+			scan_result[scan_ap_num].authmode = IOT_WIFI_AUTH_WPA_WPA2_PSK;
+			break;
+		default:
+			IOT_DEBUG("%s auto not map origin sec mode iot authmode: %d", scan_ap_list[i].ssid, scan_ap_list[i].auth_mode);
+			break;
+		}
 
 		IOT_INFO("scan_ap_num %d mt7286 scan ssid=%s, mac=%02X:%02X:%02X:%02X:%02X:%02X, rssi=%d, freq=%d, authmode=%d chan=%d",
 			scan_ap_num,
-			scan_result[i].ssid,
-			scan_result[i].bssid[0], scan_result[i].bssid[1], scan_result[i].bssid[2],
-			scan_result[i].bssid[3], scan_result[i].bssid[4], scan_result[i].bssid[5], scan_result[i].rssi,
-			scan_result[i].freq, scan_result[i].authmode, scan_ap_list[i].channel);
+			scan_result[scan_ap_num].ssid,
+			scan_result[scan_ap_num].bssid[0], scan_result[scan_ap_num].bssid[1], scan_result[scan_ap_num].bssid[2],
+			scan_result[scan_ap_num].bssid[3], scan_result[scan_ap_num].bssid[4], scan_result[scan_ap_num].bssid[5], scan_result[scan_ap_num].rssi,
+			scan_result[scan_ap_num].freq, scan_result[scan_ap_num].authmode, scan_ap_list[scan_ap_num].channel);
 		scan_ap_num++;
 	}
 	free(scan_ap_list);
