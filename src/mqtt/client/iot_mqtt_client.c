@@ -297,6 +297,11 @@ static int _iot_mqtt_run_write_stream(MQTTClient *client)
 		goto exit;
 	}
 
+#ifdef CONFIG_STDK_IOT_CORE_PROFILE_PING
+	if (w_chunk->packet_type == PINGREQ) {
+		IOT_TIMERECORD_START("PING", 1);
+	}
+#endif
 	while (!iot_os_timer_isexpired(expiry_timer)) {
 		rc = client->net->write(client->net, &w_chunk->chunk_data[written],
 				w_chunk->chunk_size - written, expiry_timer);
@@ -392,6 +397,9 @@ static void _iot_mqtt_process_received_ack(MQTTClient *client, iot_mqtt_packet_c
 		tmp = _iot_mqtt_queue_pop_by_type_and_id(&client->ack_pending_queue, PUBREL, chunk->packet_id);
 	} else if (chunk->packet_type == PINGRESP) {
 		tmp = _iot_mqtt_queue_pop_by_type_and_id(&client->ack_pending_queue, PINGREQ, 0);
+#ifdef CONFIG_STDK_IOT_CORE_PROFILE_PING
+		IOT_TIMERECORD_END("PING", 1);
+#endif
 	} else {
 		return;
 	}
