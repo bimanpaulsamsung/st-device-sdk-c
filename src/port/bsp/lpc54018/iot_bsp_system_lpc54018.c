@@ -25,6 +25,16 @@
 
 static uint64_t s_boot_time;
 
+const char* iot_bsp_get_bsp_name()
+{
+	return "lpc54018";
+}
+
+const char* iot_bsp_get_bsp_version_string()
+{
+	return "";
+}
+
 int __wrap_gettimeofday(struct timeval* tv, void* tz)
 {
 	uint64_t msec;

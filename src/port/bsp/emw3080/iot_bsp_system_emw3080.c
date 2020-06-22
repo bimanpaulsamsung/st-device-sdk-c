@@ -19,6 +19,16 @@
 #include "iot_bsp_system.h"
 #include <mico_platform.h>
 
+const char* iot_bsp_get_bsp_name()
+{
+	return "emw3080";
+}
+
+const char* iot_bsp_get_bsp_version_string()
+{
+	return "";
+}
+
 void iot_bsp_system_reboot()
 {
 	mico_system_reboot();

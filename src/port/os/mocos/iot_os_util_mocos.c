@@ -62,6 +62,19 @@ typedef struct _moc_timer {
 	mico_time_t time_out;
 } moc_timer;
 
+const char* iot_os_get_os_name()
+{
+	return "mocOS";
+}
+
+const char* iot_os_get_os_version_string()
+{
+#if defined(mocOS_VERSION)
+	return mocOS_VERSION;
+#else
+	return "";
+#endif
+}
 
 /* Thread */
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
