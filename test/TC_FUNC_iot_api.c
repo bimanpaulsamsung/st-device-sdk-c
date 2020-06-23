@@ -599,3 +599,52 @@ void TC_iot_misc_info_store_success(void **state) {
     assert_int_equal(err, IOT_ERROR_NONE);
     assert_memory_equal(new_dip_str, misc_info_dip_example, sizeof(misc_info_dip_example));
 }
+
+void TC_iot_get_device_token_invalid_parameters(void **state)
+{
+    iot_error_t err;
+    struct iot_context context;
+    char *token = NULL;
+    UNUSED(state);
+
+    // When
+    err = iot_get_device_token(NULL, NULL);
+    // Then
+    assert_int_equal(err, IOT_ERROR_INVALID_ARGS);
+
+    // When
+    err = iot_get_device_token(&context, NULL);
+    // Then
+    assert_int_equal(err, IOT_ERROR_INVALID_ARGS);
+
+    // When
+    err = iot_get_device_token(NULL, &token);
+    // Then
+    assert_int_equal(err, IOT_ERROR_INVALID_ARGS);
+}
+
+void TC_iot_get_device_token_success(void **state)
+{
+    iot_error_t err;
+    struct iot_context context;
+    char *token = NULL;
+    UNUSED(state);
+
+    // Given
+#if !defined(CONFIG_STDK_IOT_CORE_SUPPORT_STNV_PARTITION)
+    err = iot_nv_init((unsigned char *)sample_device_info, strlen(sample_device_info));
+#else
+    err = iot_nv_init(NULL, 0);
+#endif
+    assert_int_equal(err, IOT_ERROR_NONE);
+
+    // Given
+    context.devconf.mnid = "TeSt";
+    // When
+    err = iot_get_device_token(&context, &token);
+    // Then
+    assert_int_equal(err, IOT_ERROR_NONE);
+    assert_non_null(token);
+    // Teardown
+    iot_os_free(token);
+}
