@@ -1,0 +1,8 @@
+# This is a list of python packages needed for 'device_gen.py' tool. This file is used with pip.
+# ex) python3 -m pip install --user -r requirements.txt
+# 
+Pyinquirer
+Token
+prompt
+pyfiglet
+termcolor
