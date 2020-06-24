@@ -58,7 +58,9 @@ if(ENABLE_STDK_UNIT_TEST)
                    TC_FUNC_iot_security_helper_ed25519.c
                    ${SECURITY_EXTRA_SRCS}
                    TC_FUNC_iot_wt.c
-                   TC_FUNC_iot_easysetup_httpd.c)
+                   TC_FUNC_iot_easysetup_httpd.c
+                   TC_FUNC_iot_dump_log.c
+                   )
 
     target_link_libraries(stdk_test
                           PRIVATE
