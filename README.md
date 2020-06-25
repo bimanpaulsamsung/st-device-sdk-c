@@ -19,7 +19,7 @@ This core device library provides the following features :
   - Connection APIs : You can do onboarding & MQTT connection by just calling only a few these APIs.
   - [Capability](https://smartthings.developer.samsung.com/docs/api-ref/capabilities.html) APIs : More than hundred different capabilities can be implemented as only a few APIs.
 
-## How to get started?
+## How to get started? Here it is:
 
 This core device library includes platform-dependent parts that should be built in a specific toolchain or SDK. That is, if you do NOT use the pre-porting environment, you must first port them to the appropriate environment.
 
