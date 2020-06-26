@@ -1,4 +1,4 @@
-# SmartThings Device SDK
+# SmartThings Device SDK - Queue Changes
 
 [![License](https://img.shields.io/badge/licence-Apache%202.0-brightgreen.svg?style=flat)](LICENSE)
 
