@@ -29,12 +29,15 @@
 #include "MbedLinkedList.h"
 #include "us_ticker_api.h"
 
+#define OS_NAME "ARM MBED"
+
 const unsigned int iot_os_max_delay = osWaitForever;
 const unsigned int iot_os_true = 1;
 const unsigned int iot_os_false = 0;
 
 typedef void (*callbackFN)(void *); /* define Thread callback function type */
 
+static char mbedversion[10];
 static MbedLinkedList threadlist;
 
 /* Thread */
@@ -359,4 +362,15 @@ void iot_os_timer_destroy(iot_os_timer *timer)
 
 	free(*timer);
 	*timer = NULL;
+}
+
+const char* iot_os_get_os_name(void)
+{
+	return OS_NAME;
+}
+
+const char* iot_os_get_os_version_string(void)
+{
+	snprintf(mbedversion, 10, "%d.%d", MBED_MAJOR_VERSION, MBED_MINOR_VERSION);
+	return mbedversion;
 }
