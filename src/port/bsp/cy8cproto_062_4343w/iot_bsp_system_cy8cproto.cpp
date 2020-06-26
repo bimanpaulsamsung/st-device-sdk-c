@@ -24,6 +24,8 @@
 #include "iot_debug.h"
 #include "mbed.h"
 
+#define BSP_NAME "cy8cproto_062_4343w"
+
 void iot_bsp_system_reboot()
 {
 	NVIC_SystemReset();
@@ -62,3 +64,15 @@ iot_error_t iot_bsp_system_get_uniqueid(unsigned char **uid, size_t *olen)
 	//TODO: implement API
 	return IOT_ERROR_NONE;
 }
+
+const char* iot_bsp_get_bsp_name(void)
+{
+	return BSP_NAME;
+}
+
+//TODO: get proper bsp version
+const char* iot_bsp_get_bsp_version_string(void)
+{
+	return "";
+}
+
