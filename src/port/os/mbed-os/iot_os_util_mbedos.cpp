@@ -226,7 +226,7 @@ int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
 }
 
 int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
-		const unsigned int bits_to_clear)
+		const unsigned char bits_to_clear)
 {
 	EventFlags *ef = (EventFlags *)eventgroup_handle;
 	IOT_ERROR_CHECK(ef == NULL, IOT_OS_FALSE, "Invalid Event");
