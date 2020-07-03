@@ -118,7 +118,7 @@ $(shell rm $(ROOT_CA_BACKUP_FILE))
 $(shell rm $(ROOT_CA_FILE))
 
 CFLAGS += -std=c99
-CFLAGS += -DCONFIG_STDK_IOT_CORE_SECURITY_TEST_CERTS
+
 else
 # Disable SmartThing Device SDK support
 COMPONENT_ADD_INCLUDEDIRS :=
