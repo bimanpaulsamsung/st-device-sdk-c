@@ -42,19 +42,24 @@ static osPriority_t get_mbed_priority(int priority)
 {
 	switch (priority) {
 	case 0:
-		return osPriorityIdle;
+		return osPriorityNone;
 	case 1:
-		return osPriorityLow;
+		return osPriorityIdle;
 	case 2:
-		return osPriorityBelowNormal;
+		return osPriorityLow;
 	case 3:
-		return osPriorityNormal;
+		return osPriorityBelowNormal;
 	case 4:
-		return osPriorityAboveNormal;
+		return osPriorityNormal;
 	case 5:
+		return osPriorityAboveNormal;
+	case 6:
 		return osPriorityHigh;
+	case 7:
+		return osPriorityRealtime;
+	default:
+		return osPriorityNormal;
 	}
-	return osPriorityNone;
 }
 
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
