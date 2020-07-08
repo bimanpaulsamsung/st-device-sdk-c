@@ -451,9 +451,9 @@ iot_error_t iot_util_timerecord_start(const char *name, bool want_print, const c
 	 * We havt to consider other scenario too.
 	 */
 	td_pf->start_flag = true;
-	IOT_WARN("[PING AGING DEBUGING] before START gettimeofday call");
+	IOT_DEBUG("[PING AGING DEBUGING] before START gettimeofday call");
 	gettimeofday(&td_pf->tv_start, NULL);
-	IOT_WARN("[PING AGING DEBUGING] after START gettimeofday call %ld.%06ld", td_pf->tv_start.tv_sec, td_pf->tv_start.tv_usec);
+	IOT_DEBUG("[PING AGING DEBUGING] after START gettimeofday call %ld.%06ld", td_pf->tv_start.tv_sec, td_pf->tv_start.tv_usec);
 
 	if (want_print) {
 		IOT_INFO("[%s]TIME RECORD START at %s(%d)", name ? name : "default", call_func, line);
@@ -464,7 +464,6 @@ iot_error_t iot_util_timerecord_start(const char *name, bool want_print, const c
 
 long iot_util_timerecord_end(const char *name, bool want_print, const char *call_func, int line)
 {
-	struct timeval tv_end;
 	long timediff_sec, timediff_usec;
 	long tmp_sec, tmp_usec;
 	timediff_profile_t *td_pf = &head;
@@ -490,11 +489,11 @@ long iot_util_timerecord_end(const char *name, bool want_print, const char *call
 	}
 	td_pf->start_flag = false;
 
-	IOT_WARN("[PING AGING DEBUGING] before END gettimeofday call");
-	gettimeofday(&tv_end, NULL);
-	IOT_WARN("[PING AGING DEBUGING] after END gettimeofday call %ld.%06ld", tv_end.tv_sec, tv_end.tv_usec);
-	timediff_sec = tv_end.tv_sec - td_pf->tv_start.tv_sec;
-	timediff_usec = tv_end.tv_usec - td_pf->tv_start.tv_usec;
+	IOT_DEBUG("[PING AGING DEBUGING] before END gettimeofday call");
+	gettimeofday(&td_pf->tv_end, NULL);
+	IOT_DEBUG("[PING AGING DEBUGING] after END gettimeofday call %ld.%06ld", td_pf->tv_end.tv_sec, td_pf->tv_end.tv_usec);
+	timediff_sec = td_pf->tv_end.tv_sec - td_pf->tv_start.tv_sec;
+	timediff_usec = td_pf->tv_end.tv_usec - td_pf->tv_start.tv_usec;
 	if (timediff_usec < 0) {
 		timediff_sec -= 1;
 		timediff_usec += 1000000;
@@ -523,6 +522,8 @@ long iot_util_timerecord_end(const char *name, bool want_print, const char *call
 iot_error_t iot_util_timerecord_print(const char *name)
 {
 	timediff_profile_t *td_pf = &head;
+	long timediff_sec, timediff_usec;
+
 	if (name) {
 		if (strlen(name) > MAX_TIMEDIFF_NAME_N || strlen(name) == 0) {
 			IOT_WARN("TIME RECORD Name length error[1~%d]", MAX_TIMEDIFF_NAME_N);
@@ -539,8 +540,18 @@ iot_error_t iot_util_timerecord_print(const char *name)
 		}
 	}
 
-	IOT_INFO("[%s]TIME RECORD AVG STAT %ld.%06ld sec count %d",
-			name ? name : "default", td_pf->stat_avg_sec, td_pf->stat_avg_usec, td_pf->stat_n);
+	if (td_pf->start_flag == false) {
+		timediff_sec = td_pf->tv_end.tv_sec - td_pf->tv_start.tv_sec;
+		timediff_usec = td_pf->tv_end.tv_usec - td_pf->tv_start.tv_usec;
+		if (timediff_usec < 0) {
+			timediff_sec -= 1;
+			timediff_usec += 1000000;
+		}
+	}
+
+	IOT_INFO("[%s]TIME RECORD CurrDiff %ld.%06ld, AVG STAT %ld.%06ld sec count %d",
+		name ? name : "default", (td_pf->start_flag ? 0 : timediff_sec), (td_pf->start_flag ? 0 : timediff_usec),
+		td_pf->stat_avg_sec, td_pf->stat_avg_usec, td_pf->stat_n);
 
 	return IOT_ERROR_NONE;
 }

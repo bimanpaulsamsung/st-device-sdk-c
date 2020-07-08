@@ -119,6 +119,7 @@ uint16_t iot_util_convert_channel_freq(uint8_t channel);
  */
 typedef struct timediff_profile {
 	struct timeval tv_start;		/**< @brief timerecording's start time */
+	struct timeval tv_end;			/**< @brief timerecording's end time */
 	bool start_flag;				/**< @brief flag for timerecording start */
 	char name[MAX_TIMEDIFF_NAME_N + 1];		/**< @brief name of timerecording profile */
 	long stat_avg_sec;				/**< @brief average timerecording sec */
