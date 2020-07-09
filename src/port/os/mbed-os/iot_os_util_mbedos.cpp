@@ -201,14 +201,14 @@ unsigned char iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
 	IOT_ERROR_CHECK(ef == NULL, IOT_OS_FALSE, "Invalid Event");
 
 	IOT_DEBUG("Any of bits to wait for: 0x%x", bits_to_wait_for);
-	ret = ef->wait_any(bits_to_wait_for, wait_time_ms, clear_on_exit);
+	ret = ef->wait_any((uint32_t)bits_to_wait_for, wait_time_ms, clear_on_exit);
 	if (ret & osFlagsError) {
 		IOT_DEBUG("Did not receive Event for bits 0x%x | Ret [0x%x]",
 				bits_to_wait_for, ret);
 		return 0;
 	}
 	IOT_DEBUG("Received ANY | Bits: 0x%x | Value: 0x%x", bits_to_wait_for, ret);
-	return ret;
+	return (unsigned char)ret;
 }
 
 int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
@@ -218,7 +218,7 @@ int iot_os_eventgroup_set_bits(iot_os_eventgroup* eventgroup_handle,
 	IOT_ERROR_CHECK(ef == NULL, IOT_OS_FALSE, "Invalid Event");
 	IOT_DEBUG("bits_to_set: 0x%x", bits_to_set);
 
-	uint32_t ret = ef->set(bits_to_set);
+	uint32_t ret = ef->set((uint32_t)bits_to_set);
 	if (ret & osFlagsError)
 		return IOT_OS_FALSE;
 
@@ -232,7 +232,7 @@ int iot_os_eventgroup_clear_bits(iot_os_eventgroup* eventgroup_handle,
 	IOT_ERROR_CHECK(ef == NULL, IOT_OS_FALSE, "Invalid Event");
 	IOT_INFO("bits_to_set: 0x%x", bits_to_clear);
 
-	uint32_t ret = ef->clear(bits_to_clear);
+	uint32_t ret = ef->clear((uint32_t)bits_to_clear);
 	if (ret & osFlagsError)
 		return IOT_OS_FALSE;
 
