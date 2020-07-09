@@ -362,6 +362,10 @@ int st_cap_attr_send(IOT_CAP_HANDLE *cap_handle,
 		return IOT_ERROR_BAD_REQ;
 	}
 
+#ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
+	IOT_TIMERECORD_END("APP_ST", 0);
+#endif
+
 	sqnum = (sqnum + 1) & MAX_SQNUM;	// Use only positive number
 
 	evt_root = JSON_CREATE_OBJECT();
@@ -624,6 +628,9 @@ static iot_error_t _iot_process_cmd(iot_cap_handle_list_t *cap_handle_list, char
 	while (command_list != NULL) {
 		command = command_list->command;
 		if (!strcmp(command_name, command->cmd_type)) {
+#ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
+			IOT_TIMERECORD_START("APP_ST", 0);
+#endif
 			command->cmd_cb((IOT_CAP_HANDLE *)handle,
 				cmd_data, command->usr_data);
 			break;

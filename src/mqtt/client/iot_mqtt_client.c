@@ -303,10 +303,16 @@ static int _iot_mqtt_run_write_stream(MQTTClient *client)
 
 #ifdef CONFIG_STDK_IOT_CORE_PROFILE_PING
 	if (w_chunk->packet_type == PINGREQ) {
-		IOT_TIMERECORD_START("PING", 1);
+		IOT_TIMERECORD_START("PING", 0);
 	}
 #endif
 	while (!iot_os_timer_isexpired(expiry_timer)) {
+#ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
+		if (w_chunk->packet_type == PUBLISH) {
+			IOT_TIMERECORD_END("MQTT_ST", 0);
+			IOT_TIMERECORD_START("NET_EST", 0);
+		}
+#endif
 		rc = client->net->write(client->net, &w_chunk->chunk_data[written],
 				w_chunk->chunk_size - written, expiry_timer);
 
@@ -508,6 +514,12 @@ static void _iot_mqtt_process_post_read(MQTTClient *client, iot_mqtt_packet_chun
 	switch (chunk->packet_type) {
 		case CONNACK:
 		case PUBACK:
+#ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
+			IOT_TIMERECORD_END("NET_EST", 0);
+			iot_util_timerecord_print("APP_ST");
+			iot_util_timerecord_print("MQTT_ST");
+			iot_util_timerecord_print("NET_EST");
+#endif
 		case SUBACK:
 		case UNSUBACK:
 		case PUBCOMP:
@@ -515,6 +527,9 @@ static void _iot_mqtt_process_post_read(MQTTClient *client, iot_mqtt_packet_chun
 			_iot_mqtt_process_received_ack(client, chunk);
 			break;
 		case PUBLISH:
+#ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
+			IOT_TIMERECORD_START("MQTT_ST", 0);
+#endif
 			_iot_mqtt_process_received_publish(client, chunk);
 			break;
 		case PUBREC:
