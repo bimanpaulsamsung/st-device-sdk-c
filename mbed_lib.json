@@ -29,6 +29,16 @@
             "help": "Debug Level Warning",
             "macro_name": "CONFIG_STDK_IOT_CORE_LOG_LEVEL_WARN",
             "value": true
+        },
+        "ssl-max-content-len": {
+            "help": "ssl-max-content-len",
+            "macro_name": "MBEDTLS_SSL_MAX_CONTENT_LEN",
+            "value": 4096
+        },
+        "ssl-dtls-max-buffering": {
+            "help": "ssl-dtls-max-buffering",
+            "macro_name": "MBEDTLS_SSL_DTLS_MAX_BUFFERING",
+            "value": 8192
         }
     },
     "macros": [
