@@ -328,6 +328,11 @@ static int _iot_mqtt_run_write_stream(MQTTClient *client)
 			_iot_mqtt_process_post_write(client, w_chunk);
 			break;
 		}
+#ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
+		if (w_chunk->packet_type == PUBLISH) {
+			IOT_WARN("MQTT_ST/NET_EST timerecord re-triggered again!!!");
+		}
+#endif
 	}
 
 	if (written != w_chunk->chunk_size) {
