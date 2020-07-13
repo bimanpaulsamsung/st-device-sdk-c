@@ -25,7 +25,11 @@
 
 #define IOT_TASK_NAME "iot-task"
 #define IOT_TASK_STACK_SIZE (1024*5)
+#if defined(CONFIG_STDK_IOT_TASK_PRIORITY)
+#define IOT_TASK_PRIORITY (CONFIG_STDK_IOT_TASK_PRIORITY)
+#else
 #define IOT_TASK_PRIORITY (4)
+#endif
 #define IOT_QUEUE_LENGTH (10)
 #define IOT_PUB_QUEUE_LENGTH (10)
 
