@@ -1,6 +1,6 @@
 /* ***************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright (c) 2020 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,26 @@
  *
  ****************************************************************************/
 
-#ifndef _IOT_NET_PLATFORM_H_
-#define _IOT_NET_PLATFORM_H_
+#include "iot_bsp_random.h"
+#include "iot_debug.h"
+#include <stdlib.h>
+#include "trng_api.h"
 
-#include "mbedtls/platform.h"
-#include "mbedtls/net.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/certs.h"
-#include "mbedtls/x509.h"
-#include "mbedtls/debug.h"
+unsigned int iot_bsp_random()
+{
+	trng_t obj;
+	uint32_t randomInt;
+	size_t output_length;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+	trng_init(&obj);
+	int ret = trng_get_bytes(&obj, (uint8_t *)&randomInt,
+			sizeof(randomInt), &output_length);
+	trng_free(&obj);
 
-typedef struct iot_net_platform_context {
-	mbedtls_net_context server_fd;
+	if (ret != 0) {
+		IOT_ERROR("Random Number generation failed");
+		return 0;
+	}
 
-	mbedtls_ssl_context ssl;
-	mbedtls_ssl_config conf;
-
-	mbedtls_entropy_context entropy;
-	mbedtls_ctr_drbg_context ctr_drbg;
-
-	mbedtls_x509_crt cacert;
-} iot_net_platform_context_t;
-
-#ifdef __cplusplus
+	return randomInt;
 }
-#endif
-#endif /* _IOT_NET_PLATFORM_H_ */

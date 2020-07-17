@@ -20,6 +20,11 @@
 #define _IOT_OS_UTIL_H_
 #include <stdlib.h>
 
+#ifdef  __cplusplus
+extern "C"
+{
+#endif
+
 typedef void *iot_os_thread;
 typedef void iot_os_queue;
 typedef void iot_os_eventgroup;
@@ -425,6 +430,10 @@ static inline void *iot_os_calloc(size_t nmemb, size_t size) { return calloc(nme
 static inline void *iot_os_realloc(void *ptr, size_t size) { return realloc(ptr, size); }
 static inline void iot_os_free(void *ptr) { return free(ptr); }
 static inline char *iot_os_strdup(const char *src) { return strdup(src); }
+#endif
+
+#ifdef  __cplusplus
+}
 #endif
 
 #endif /* _IOT_OS_UTIL_H_ */

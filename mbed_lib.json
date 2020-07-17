@@ -1,0 +1,34 @@
+{
+    "name": "stdk",
+    "config": {
+        "present": 1,
+        "crypto-ed25519": {
+            "help": "STDK crypto Support ED25519",
+            "macro_name": "CONFIG_STDK_IOT_CORE_CRYPTO_SUPPORT_ED25519",
+            "value": true
+        },
+        "tls-mbedtls": {
+            "help": "Use mbedTLS",
+            "value": true
+        },
+        "tls-openssl": {
+            "help": "Use OpenSSL",
+            "value": false
+        },
+        "debug-level-error": {
+            "help": "Debug Level Error",
+            "macro_name": "CONFIG_STDK_IOT_CORE_LOG_LEVEL_ERROR",
+            "value": true
+        },
+        "debug-level-info": {
+            "help": "Debug Level Information",
+            "macro_name": "CONFIG_STDK_IOT_CORE_LOG_LEVEL_INFO",
+            "value": true
+        },
+        "debug-level-warn": {
+            "help": "Debug Level Warning",
+            "macro_name": "CONFIG_STDK_IOT_CORE_LOG_LEVEL_WARN",
+            "value": true
+        }
+    }
+}
