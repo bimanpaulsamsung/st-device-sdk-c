@@ -28,6 +28,8 @@
 
 #define IOT_MBEDTLS_READ_TIMEOUT_MS 30000
 
+#define CONFIG_MBEDTLS_DEBUG
+#define CONFIG_MBEDTLS_DEBUG_LEVEL 4
 #ifdef CONFIG_MBEDTLS_DEBUG
 static void _iot_net_mbedtls_debug(void *ctx, int level, const char *file, int line,
 					const char *str)
