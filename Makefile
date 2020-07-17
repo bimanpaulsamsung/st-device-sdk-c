@@ -3,7 +3,17 @@ TOPDIR	:= $(CURDIR)
 include stdkconfig
 include $(TOPDIR)/make/common.mk
 
+ifeq ($(OS),linux)
+CFLAGS_CONFIG += -DCONFIG_STDK_IOT_CORE_BSP_LINUX
+else
+CFLAGS_CONFIG += -DSTDK_IOT_CORE_EASYSETUP_POSIX_TESTING
+endif
+
+ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_LINUX, $(CFLAGS_CONFIG)),)
+BSP_DIR = src/port/bsp/linux
+else
 BSP_DIR = src/port/bsp/posix
+endif
 OS_DIR = src/port/os/posix
 ifneq ($(findstring CONFIG_STDK_IOT_CORE_NET_MBEDTLS, $(CFLAGS_CONFIG)),)
 NET_DIR = src/port/net/mbedtls
@@ -20,6 +30,9 @@ CBOR_DIR = src/deps/cbor/tinycbor/src
 
 CFLAGS	:= -std=c99 -D_GNU_SOURCE
 CFLAGS	+= $(CFLAGS_CONFIG)
+ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_LINUX, $(CFLAGS_CONFIG)),)
+CFLAGS	+= $(shell pkg-config --cflags gio-2.0 glib-2.0)
+endif
 
 INCS	:= -I/usr/include -Isrc/include -Isrc/include/mqtt -Isrc/include/os -Isrc/include/bsp -Isrc/include/external -I$(NET_DIR)
 INCS	+= -Isrc/include/security
@@ -31,8 +44,14 @@ SRCS	+= $(wildcard $(BSP_DIR)/*.c)
 SRCS	+= $(wildcard $(OS_DIR)/*.c)
 SRCS	+= $(wildcard $(NET_DIR)/*.c)
 SRCS	+= $(wildcard $(CRYPTO_DIR)/*.c)
-SRCS	+= $(EASYSETUP_DIR)/iot_easysetup_st_mqtt.c \
-			$(wildcard $(EASYSETUP_DIR)/posix_testing/*.c)
+SRCS	+= $(EASYSETUP_DIR)/iot_easysetup_st_mqtt.c
+ifneq ($(findstring STDK_IOT_CORE_EASYSETUP_POSIX_TESTING, $(CFLAGS_CONFIG)),)
+SRCS	+= $(wildcard $(EASYSETUP_DIR)/posix_testing/*.c)
+else
+SRCS	+= $(wildcard $(EASYSETUP_DIR)/http/*.c) \
+	   $(wildcard $(EASYSETUP_DIR)/http/tcp/*.c) \
+	   $(wildcard $(EASYSETUP_DIR)/http/tls/*.c)
+endif
 SRCS	+= $(wildcard $(MQTT_DIR)/client/*.c)
 SRCS	+= $(wildcard $(MQTT_DIR)/packet/*.c)
 SRCS	+= $(wildcard $(SECURITY_DIR)/*.c)

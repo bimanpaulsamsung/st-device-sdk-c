@@ -1,4 +1,3 @@
-
 CC = gcc
 RM = rm -rf
 CFLAGS = -std=c99
@@ -6,6 +5,9 @@ LIB_NAME = iotcore
 INC = -I../src/include
 LIB_DIR = -L../output
 LIBS = -l$(LIB_NAME) -lssl -lpthread -lrt -lcrypto
+ifeq ($(OS),linux)
+LIBS += $(shell pkg-config --libs gio-2.0 glib-2.0)
+endif
 SRCS = example.c
 JSONS = device_info.json onboarding_config.json
 OBJS = $(JSONS:%.json=%.o)
