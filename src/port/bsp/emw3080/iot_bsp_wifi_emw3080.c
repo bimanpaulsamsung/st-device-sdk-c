@@ -269,10 +269,10 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 }
 
 static iot_wifi_scan_result_t* iot_scan_buff;
+static uint16_t ap_num;
 static void _ap_list_callback(ScanResult *ap_list, void *arg)
 {
 	int i = 0;
-	uint16_t *ap_num = (uint16_t*)arg;
 
 	if (!ap_list || !iot_scan_buff) {
 		IOT_ERROR("ap_list 0x%x, or Scan buffer has been cleared.", ap_list);
@@ -290,7 +290,7 @@ static void _ap_list_callback(ScanResult *ap_list, void *arg)
 		iot_scan_buff[i].rssi = ap_list->ApList[i].rssi;
 	}
 
-	*ap_num = ap_list->ApNum;
+	ap_num = ap_list->ApNum;
 	iot_os_eventgroup_set_bits(wifi_event_group, WIFI_STA_SCAN_BIT);
 
 }
@@ -298,10 +298,10 @@ static void _ap_list_callback(ScanResult *ap_list, void *arg)
 uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 {
 	unsigned int ux_bits = 0;
-	uint16_t ap_num = 0;
+	ap_num = 0;
 
 	/* Register user function when wlan scan is completed */
-	mico_system_notify_register( mico_notify_WIFI_SCAN_COMPLETED, (void *)_ap_list_callback, &ap_num );
+	mico_system_notify_register(mico_notify_WIFI_SCAN_COMPLETED, (void *)_ap_list_callback, NULL);
 
 	IOT_INFO("start scan mode, please wait...");
 	micoWlanStartScan( );

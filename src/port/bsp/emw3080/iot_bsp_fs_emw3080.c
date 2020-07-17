@@ -24,45 +24,45 @@
 
 typedef struct nv_item_table
 {
-	size_t hash;
+	const char* name;
 	size_t size;
 	size_t addr;
 } nv_item_table_s;
 
-#define MAX_NV_ITEM_CNT			18
+#define MAX_NV_ITEM_CNT			19
 
 #define STDK_NV_SECTOR_SIZE            (0x1000)
 
 nv_item_table_s nv_table[MAX_NV_ITEM_CNT] = {
 	/* for wifi prov data */
-	{0x24a05746, 65, NULL},  // WifiProvStatus
-	{0x25726d8, 65, NULL},   // IotAPSSID
-	{0x25723e0, 65, NULL},   // IotAPPASS
-	{0xbb39a0e, 65, NULL},   // IotAPBSSID
-	{0xb6bb1795, 65, NULL},   // IotAPAuthType
+	{"WifiProvStatus", 65, 0},  // WifiProvStatus
+	{"IotAPSSID", 65, 0},   // IotAPSSID
+	{"IotAPPASS", 65, 0},   // IotAPPASS
+	{"IotAPBSSID", 65, 0},   // IotAPBSSID
+	{"IotAPAuthType", 65, 0},   // IotAPAuthType
 
 	/* for cloud prov data */
-	{0xd317a076, 65, NULL},   // CloudProvStatus
-	{0x2892596, 512, NULL},  // ServerURL
-	{0xcadbd84, 37, NULL},   // ServerPort
-	{0xf4e0, 37, NULL},  // Lable
+	{"CloudProvStatus", 65, 0},   // CloudProvStatus
+	{"ServerURL", 512, 0},  // ServerURL
+	{"ServerPort", 37, 0},   // ServerPort
+	{"Label", 37, 0},  // Label
 
-	{0x70012d, 129, NULL},  // DeviceID
+	{"DeviceID", 129, 0},  // DeviceID
+	{"MiscInfo", 2048, 0},   // PrivateKey
 
 	/* stored in stnv partition (manufacturer data) */
-	{0xc96f1bc, 2049, NULL},   // PrivateKey
-	{0x2860e24, 2049, NULL},   // PublicKey
-	{0x4bf15, 37, NULL},   // PKType
-	{0x82cac2, 2049, NULL},  // RootCert
-	{0x1a7aa8, 2049, NULL},   // SubCert
-	{0xaf0205e, 2049, NULL},   // DeviceCert
-	{0x164c23, 37, NULL},   // ClaimID
-	{0x2887a54, 37, NULL},   // SerialNum
+	{"PrivateKey", 2048, 0},   // PrivateKey
+	{"PublicKey", 2048, 0},   // PublicKey
+	{"RootCert", 2048, 0},  // RootCert
+	{"SubCert", 2048, 0},   // SubCert
+	{"DeviceCert", 2048, 0},   // DeviceCert
+	{"PKType", 37, 0},	 // PKType
+	{"ClaimID", 37, 0},   // ClaimID
+	{"SerialNum", 37, 0},   // SerialNum
 	/* stored in stnv partition (manufacturer data) */
 };
 uint32_t nv_base_address;
 mico_mutex_t flash_mutex;
-mico_mutex_t nv_mutex;
 
 static void device_mutex_lock(void)
 {
@@ -76,34 +76,12 @@ static void device_mutex_unlock(void)
 	mico_rtos_unlock_mutex(&flash_mutex);
 }
 
-static void nv_mutex_lock(void)
-{
-	if(nv_mutex == NULL)
-		mico_rtos_init_mutex(&nv_mutex);
-	mico_rtos_lock_mutex(&nv_mutex);
-}
-
-static void nv_mutex_unlock(void)
-{
-	mico_rtos_unlock_mutex(&nv_mutex);
-}
-
-static size_t simple_str_hash(const unsigned char *s, size_t len)
-{
-	size_t key = 0;
-
-	while (len--)
-		key = 5 * key + *s++;
-
-	return key;
-}
-
-static int nv_get_table_idx(size_t hash)
+static int nv_get_table_idx(const char *s)
 {
 	int i;
 
 	for (i = 0; i < MAX_NV_ITEM_CNT; i++) {
-		if (hash == nv_table[i].hash)
+		if (0 == strcmp(s, nv_table[i].name))
 			return i;
 	}
 	return -1;
@@ -114,14 +92,12 @@ static void nv_data_preload(void)
 	int i;
 	size_t last_address;
 
-	nv_mutex_lock();
 	last_address = nv_base_address;
 	for (i = 0; i < MAX_NV_ITEM_CNT; i++) {
 		nv_table[i].addr = last_address;
 		last_address += nv_table[i].size;
-		IOT_DEBUG("add storage : hash %X, addr %X, size %d", nv_table[i].hash, nv_table[i].addr, nv_table[i].size);
+		IOT_DEBUG("add storage : name %s, addr %X, size %d", nv_table[i].name, nv_table[i].addr, nv_table[i].size);
 	}
-	nv_mutex_unlock();
 }
 
 static void nv_storage_init(void)
@@ -135,7 +111,6 @@ static void nv_storage_init(void)
 	info = MicoFlashGetInfo(MICO_PARTITION_USER);
 	nv_base_address = info->partition_start_addr;
 	mico_rtos_init_mutex(&flash_mutex);
-	mico_rtos_init_mutex(&nv_mutex);
 	nv_data_preload();
 	intitialized = true;
 }
@@ -143,7 +118,7 @@ static void nv_storage_init(void)
 static int nv_storage_read(const char *store, uint8_t *buf, size_t *size)
 {
 	int idx;
-	size_t cmp_size, hash;
+	size_t cmp_size;
 	uint8_t *tempbuf;
 	uint32_t offset;
 	size_t read_size;
@@ -151,15 +126,12 @@ static int nv_storage_read(const char *store, uint8_t *buf, size_t *size)
 	nv_storage_init();
 	IOT_INFO("read %s size %d", store, *size);
 
-	nv_mutex_lock();
-	hash = simple_str_hash(store, strlen(store));
-	idx = nv_get_table_idx(hash);
+	idx = nv_get_table_idx(store);
 	if (idx < 0) {
 		IOT_ERROR("do not allow new item %s\n", store);
-		nv_mutex_unlock();
 		return -1;
 	}
-	nv_mutex_unlock();
+
 	read_size = (nv_table[idx].size > *size) ? *size : nv_table[idx].size;
 
 	IOT_INFO("[read] address:0x%x, size:%d\n",nv_table[idx].addr, read_size);
@@ -189,7 +161,6 @@ static int nv_storage_read(const char *store, uint8_t *buf, size_t *size)
 static int nv_storage_write(const char *store, uint8_t *buf, size_t size)
 {
 	int idx;
-	size_t hash;
 	uint32_t offset, no_offset = 0;
 	OSStatus err = kNoErr;
 	char *full_buf = NULL;
@@ -197,15 +168,11 @@ static int nv_storage_write(const char *store, uint8_t *buf, size_t size)
 	nv_storage_init();
 	IOT_INFO("write %s , size %d", store, size);
 
-	nv_mutex_lock();
-	hash = simple_str_hash(store, strlen(store));
-	idx = nv_get_table_idx(hash);
+	idx = nv_get_table_idx(store);
 	if (idx < 0) {
 		IOT_ERROR("do not allow new item %s\n", store);
-		nv_mutex_unlock();
 		return -1;
 	}
-	nv_mutex_unlock();
 
 	if (size > nv_table[idx].size) {
 		IOT_ERROR("%s stored size %d is smaller than size of write buffer %d\n", store, nv_table[idx].size, size);
@@ -239,21 +206,16 @@ static int nv_storage_write(const char *store, uint8_t *buf, size_t size)
 static int nv_storage_erase(const char *store)
 {
 	int idx;
-	size_t hash;
 	uint32_t offset;
 	OSStatus err = kNoErr;
 
 	nv_storage_init();
 
-	nv_mutex_lock();
-	hash = simple_str_hash(store, strlen(store));
-	idx = nv_get_table_idx(hash);
+	idx = nv_get_table_idx(store);
 	if (idx < 0) {
 		IOT_ERROR("do not allow new item %s\n", store);
-		nv_mutex_unlock();
 		return -1;
 	}
-	nv_mutex_unlock();
 
 	offset = nv_table[idx].addr - nv_base_address;
 	device_mutex_lock();
@@ -311,7 +273,7 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, size_
 	if (!data || length <= 0 || length > STDK_NV_SECTOR_SIZE)
 		return IOT_ERROR_FS_WRITE_FAIL;
 
-	ret = nv_storage_write(handle.filename, data, length);
+	ret = nv_storage_write(handle.filename, data, length + 1);
 	IOT_ERROR_CHECK(ret <= 0, IOT_ERROR_FS_WRITE_FAIL, "nvs write fail ");
 
 	return IOT_ERROR_NONE;
