@@ -23,7 +23,7 @@
 
 typedef struct nv_item_table
 {
-	unsigned int hash;
+	const char* name;
 	unsigned int size;
 	unsigned int addr;
 } nv_item_table_s;
@@ -38,30 +38,30 @@ typedef struct nv_item_table
   pic32mz support data size of write operation is 2048*/
 nv_item_table_s nv_table[MAX_NV_ITEM_CNT] = {
 	/* for wifi prov data */
-	{0x24a05746, 65, 0},  // WifiProvStatus
-	{0x25726d8, 65, 0},   // IotAPSSID
-	{0x25723e0, 65, 0},   // IotAPPASS
-	{0xbb39a0e, 65, 0},   // IotAPBSSID
-	{0xb6bb1795, 65, 0},   // IotAPAuthType
+	{"WifiProvStatus", 65, 0},  // WifiProvStatus
+	{"IotAPSSID", 65, 0},   // IotAPSSID
+	{"IotAPPASS", 65, 0},   // IotAPPASS
+	{"IotAPBSSID", 65, 0},   // IotAPBSSID
+	{"IotAPAuthType", 65, 0},   // IotAPAuthType
 
 	/* for cloud prov data */
-	{0xd317a076, 65, 0},   // CloudProvStatus
-	{0x2892596, 512, 0},  // ServerURL
-	{0xcadbd84, 37, 0},   // ServerPort
-	{0xf4e0, 37, 0},  // Lable
+	{"CloudProvStatus", 65, 0},   // CloudProvStatus
+	{"ServerURL", 512, 0},  // ServerURL
+	{"ServerPort", 37, 0},   // ServerPort
+	{"Label", 37, 0},  // Label
 
-	{0x70012d, 129, 0},  // DeviceID
+	{"DeviceID", 129, 0},  // DeviceID
+	{"MiscInfo", 2048, 0},  //MiscInfo
 
-	{0x7b718c, 2048, 0},  // MiscInfo
 	/* stored in stnv partition (manufacturer data) */
-	{0xc96f1bc, 2048, 0},   // PrivateKey
-	{0x2860e24, 2048, 0},   // PublicKey
-	{0x82cac2, 2048, 0},  // RootCert
-	{0x1a7aa8, 2048, 0},   // SubCert
-	{0xaf0205e, 2048, 0},   // DeviceCert
-	{0x4bf15, 37, 0},   // PKType
-	{0x164c23, 37, 0},   // ClaimID
-	{0x2887a54, 37, 0},   // SerialNum
+	{"PrivateKey", 2048, 0},   // PrivateKey
+	{"PublicKey", 2048, 0},   // PublicKey
+	{"RootCert", 2048, 0},  // RootCert
+	{"SubCert", 2048, 0},   // SubCert
+	{"DeviceCert", 2048, 0},   // DeviceCert
+	{"PKType", 37, 0},   // PKType
+	{"ClaimID", 37, 0},   // ClaimID
+	{"SerialNum", 37, 0},   // SerialNum
 	/* stored in stnv partition (manufacturer data) */
 };
 
@@ -82,22 +82,12 @@ static void device_mutex_unlock(void)
 	xSemaphoreGive(_flash_mutex);
 }
 
-static unsigned int simple_str_hash(char *s, int len)
-{
-	unsigned int key = 0;
-
-	while (len--)
-		key = 5 * key + *s++;
-
-	return key;
-}
-
-static int nv_get_table_idx(unsigned int hash)
+static int nv_get_table_idx(char *s)
 {
 	int i;
 
 	for (i = 0; i < MAX_NV_ITEM_CNT; i++) {
-		if (hash == nv_table[i].hash)
+		if (0 == strcmp(nv_table[i].name, s))
 			return i;
 	}
 	return -1;
@@ -121,7 +111,7 @@ static void nv_data_preload(void)
 			last_address += nv_table[i].size;
 		}
 
-		IOT_DEBUG("add storage : hash 0x%X, addr %d, size %d", nv_table[i].hash, nv_table[i].addr, nv_table[i].size);
+		IOT_DEBUG("add storage : name %s, addr %d, size %d", nv_table[i].name, nv_table[i].addr, nv_table[i].size);
 	}
 }
 
@@ -154,13 +144,11 @@ iot_error_t iot_bsp_fs_open(const char* filename, iot_bsp_fs_open_mode_t mode, i
 
 iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, size_t *length)
 {
-	unsigned int hash;
 	int idx;
 	int offset;
 	int rlen;
 
-	hash = simple_str_hash(handle.filename, strlen(handle.filename));
-	idx = nv_get_table_idx(hash);
+	idx = nv_get_table_idx(handle.filename);
 	if (idx < 0) {
 		IOT_ERROR("do not allow new item %s\n", handle.filename);
 		return IOT_ERROR_FS_READ_FAIL;
@@ -192,15 +180,14 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, size_t *le
 
 iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char* data, size_t length)
 {
-	unsigned int hash;
 	int idx;
 	int offset;
 	int sector;
+	size_t op_len;
 	char *sector_buf;
 	iot_error_t ret = IOT_ERROR_FS_WRITE_FAIL;
 
-	hash = simple_str_hash(handle.filename, strlen(handle.filename));
-	idx = nv_get_table_idx(hash);
+	idx = nv_get_table_idx(handle.filename);
 	if (idx < 0) {
 		IOT_ERROR("invalid item %s\n", handle.filename);
 		return IOT_ERROR_FS_WRITE_FAIL;
@@ -208,11 +195,10 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char* data, size_
 
 	IOT_INFO("[write] address:0x%x, size:%d\n",nv_table[idx].addr, nv_table[idx].size);
 
-	if (length == (STDK_NV_SECTOR_SIZE + 1))
-		--length;
+	op_len = (length < STDK_NV_SECTOR_SIZE)? (length + 1) : length;
 
-	if (length > nv_table[idx].size) {
-		IOT_ERROR("%s nv table size %d is smaller than size of write buffer %d\n", handle.filename, nv_table[idx].size, length);
+	if (op_len > nv_table[idx].size) {
+		IOT_ERROR("%s nv table size %d is smaller than size of write buffer %d\n", handle.filename, nv_table[idx].size, op_len);
 		return IOT_ERROR_FS_WRITE_FAIL;
 	}
 
@@ -231,12 +217,12 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char* data, size_
 	}
 
 	offset = nv_table[idx].addr % STDK_NV_SECTOR_SIZE;
-	if (offset + length > STDK_NV_SECTOR_SIZE) {
-		IOT_ERROR("%s data length abnormal, offset %d and data length %d\n", handle.filename, offset, length);
+	if (offset + op_len > STDK_NV_SECTOR_SIZE) {
+		IOT_ERROR("%s data length abnormal, offset %d and data length %d\n", handle.filename, offset, op_len);
 		goto write_fail;
 	}
 
-	memcpy(sector_buf + offset, data, length + 1);
+	memcpy(sector_buf + offset, data, op_len);
 	if (IOT_DataWrite(sector_buf, STDK_NV_SECTOR_SIZE, sector) < 0) {
 		IOT_ERROR("%s failed to read sector data\n", handle.filename);
 		goto write_fail;
