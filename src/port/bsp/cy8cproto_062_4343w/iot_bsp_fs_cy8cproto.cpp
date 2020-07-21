@@ -129,8 +129,7 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, unsig
 		return IOT_ERROR_FS_NO_FILE;
 	}
 
-	/* write 'NULL' to file end */
-	ret = write(handle.fd, data, length+1);
+	ret = write(handle.fd, data, length);
 	if (ret == -1) {
 		return IOT_ERROR_FS_WRITE_FAIL;
 	}
