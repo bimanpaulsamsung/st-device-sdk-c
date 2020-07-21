@@ -116,6 +116,13 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char *buffer, size_t *le
 
 	*length = size;
 
+	IOT_INFO("DATA TO READ: %d bytes from %s", size, handle.filename);
+	IOT_INFO("------HEX-----");
+	for (int i=0; i< size; i++) {printf("%02x ", data[i]);}
+	IOT_INFO("\n-----ASCII----");
+	for (int i=0; i< size; i++) {printf("%c ", data[i]);}
+	IOT_INFO("\n--------------");
+
 	free(data);
 
 	return IOT_ERROR_NONE;
@@ -129,8 +136,14 @@ iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char *data, unsig
 		return IOT_ERROR_FS_NO_FILE;
 	}
 
+	IOT_INFO("DATA TO WRITE: %d bytes from %s", length, handle.filename);
+	IOT_INFO("------HEX-----");
+	for (int i=0; i< length; i++) {printf("%02x ", data[i]);}
+	IOT_INFO("\n-----ASCII----");
+	for (int i=0; i< length; i++) {printf("%02x ", data[i]);}
+	IOT_INFO("\n--------------");
 	/* write 'NULL' to file end */
-	ret = write(handle.fd, data, length+1);
+	ret = write(handle.fd, data, length);
 	if (ret == -1) {
 		return IOT_ERROR_FS_WRITE_FAIL;
 	}
