@@ -49,6 +49,8 @@ const char* iot_bsp_nv_get_data_path(iot_nvd_t nv_type) {
 		return "/fs/Label";
 	case IOT_NVD_DEVICE_ID:
 		return "/fs/DeviceID";
+	case IOT_NVD_MISC_INFO:
+		return "/fs/MiscInfo";
 
 	/* TODO: Get Manufacturer data */
 	/* stored in stnv partition (manufacturer data) */
