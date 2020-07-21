@@ -49,6 +49,8 @@ const char* iot_bsp_nv_get_data_path(iot_nvd_t nv_type) {
 		return "/fs/Label";
 	case IOT_NVD_DEVICE_ID:
 		return "/fs/DeviceID";
+	case IOT_NVD_MISC_INFO:
+		return "/fs/MiscInfo";
 
 	/* TODO: Get Manufacturer data */
 	/* stored in stnv partition (manufacturer data) */
@@ -57,9 +59,11 @@ const char* iot_bsp_nv_get_data_path(iot_nvd_t nv_type) {
 	case IOT_NVD_PUBLIC_KEY:
 		return "/rom/PublicKey";
 	case IOT_NVD_ROOT_CA_CERT:
-		return "/rom/CACert";
+		return "/rom/RootCert";
 	case IOT_NVD_SUB_CA_CERT:
 		return "/rom/SubCert";
+	case IOT_NVD_DEVICE_CERT:
+		return "/rom/DeviceCert";
 	case IOT_NVD_SERIAL_NUM:
 		return "/rom/SerialNum";
 
