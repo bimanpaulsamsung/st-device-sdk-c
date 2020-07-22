@@ -29,7 +29,8 @@
 #define IS_WF_INTF(x) ((strcmp(x, "MRF24W") == 0) || (strcmp(x, "MRF24WN") == 0))
 #define WF_DEFAULT_POWER_SAVE WDRV_DEFAULT_POWER_SAVE
 
-#define SNTP_TIME_TRY_MAX	10
+#define SNTP_TIME_TRY_MAX       10
+#define MICROCHIP_MAX_WIFI_SCAN 15
 
 WF_CONFIG_DATA _wifi_cfg;
 extern WDRV_MRF24WN_PRIV g_wdrv_priv;
@@ -282,7 +283,7 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 {
 	uint16_t ap_num = 0;
 	uint16_t idx = 0;
-	uint16_t cpsize;
+	uint16_t cpsize, maxsize;
 	IWPRIV_GET_PARAM param;
 	IWPRIV_EXECUTE_PARAM exeParam;
 	WDRV_SCAN_RESULT *scanResult;
@@ -307,7 +308,8 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 	iwpriv_get(SCANRESULTS_COUNT_GET, &param);
 	IOT_INFO("wifi scan, get %d items\r\n", param.scan.numberOfResults);
 
-	cpsize = (param.scan.numberOfResults < IOT_WIFI_MAX_SCAN_RESULT) ? param.scan.numberOfResults : IOT_WIFI_MAX_SCAN_RESULT;
+	maxsize = (MICROCHIP_MAX_WIFI_SCAN < IOT_WIFI_MAX_SCAN_RESULT) ? MICROCHIP_MAX_WIFI_SCAN : IOT_WIFI_MAX_SCAN_RESULT;
+	cpsize = (param.scan.numberOfResults < maxsize) ? param.scan.numberOfResults : maxsize;
 	for (; idx < cpsize; idx++) {
 		memset(&param, 0, sizeof(param));
 		param.scan.index = idx;
