@@ -1,0 +1,265 @@
+menu "SmartThings Mbed OS Configuration"
+
+config STDK_IOT_CORE
+    bool "Enable SmartThings IoT Core"
+    select STDK_IOT_CORE_EASYSETUP_HTTP
+    help
+       Select this option to enable support for the Samsung SmartThings
+
+config STDK_IOT_CORE_EASYSETUP_HTTP
+    bool "Use http for easysetup"
+    default y
+    depends on STDK_IOT_CORE
+    help
+       If this option is enabled, STDK will use httpd for easy setup.
+
+config STDK_IOT_CORE_EASYSETUP_X509
+    bool "Support x.509 for easysetup"
+    default n
+    depends on STDK_IOT_CORE_EASYSETUP_HTTP
+    help
+       If this option is enabled, STDK will use x.509 for easy setup.
+
+config STDK_IOT_CORE_EASYSETUP_LOG_SUPPORT_NO_USE_LOGFILE
+    bool "Logging via device-to-device"
+    default n
+    depends on STDK_IOT_CORE_EASYSETUP_HTTP
+    help
+       If Logfile logging isn't supported, this optioin can be useful instead of logfile.
+       If this option is enabled, STDK can support logging via device-to-device mechanism without logfile system.
+
+config STDK_IOT_CORE_EASYSETUP_HTTP_LOG_SIZE
+    int "log buffer size in byte"
+    default 1024
+    depends on STDK_IOT_CORE_EASYSETUP_HTTP_LOG_SUPPORT
+    help
+      Configuration for easysetup log size
+
+config STDK_IOT_CORE_LOG_LEVEL_ERROR
+    bool "Enable Log Level ERROR"
+    default y
+    depends on STDK_IOT_CORE
+    help
+       If this option is disabled, STDK will exclude ERROR message code.
+
+config STDK_IOT_CORE_LOG_LEVEL_WARN
+    bool "Enable Log Level WARNING"
+    default y
+    depends on STDK_IOT_CORE
+    help
+       If this option is disabled, STDK will exclude WARN message code.
+
+config STDK_IOT_CORE_LOG_LEVEL_INFO
+    bool "Enable Log Level INFO"
+    default n
+    depends on STDK_IOT_CORE
+    help
+       If this option is disabled, STDK will exclude INFO message code.
+
+config STDK_IOT_CORE_LOG_LEVEL_DEBUG
+    bool "Enable Log Level DEBUG"
+    default n
+    depends on STDK_IOT_CORE
+    help
+       If this option is disabled, STDK will exclude DEBUG message code.
+
+config STDK_IOT_CORE_PROFILE_PING
+    bool "Enable Profile feature for ping"
+    default n
+    depends on STDK_IOT_CORE
+    help
+       If this option is enabled, STDK will check time diff from ping req to ping rsp.
+
+config STDK_IOT_CORE_PROFILE_COMMAND
+    bool "Enable Profile feature for command usage time"
+    default n
+    depends on STDK_IOT_CORE
+    help
+       If this option is enabled, STDK will check time diff from received command to replying event.
+
+config STDK_IOT_CORE_SUPPORT_STNV_PARTITION
+    bool "Use STNV Partition"
+    default n
+    depends on STDK_IOT_CORE
+    help
+       If this option is enabled, STDK will use STNV partition data for easysetup.
+
+config STDK_IOT_CORE_LOG_FILE
+    bool "File logging system"
+    default n
+    depends on STDK_IOT_CORE
+    help
+       If this option is enable, STDK will save iot log to flash memory
+
+choice STDK_IOT_CORE_LOG_FILE_TYPE
+    prompt "Log file type"
+    default STDK_IOT_CORE_LOG_FILE_RAM_ONLY
+    depends on STDK_IOT_CORE_LOG_FILE
+    help
+       Choose the log-file type
+
+config STDK_IOT_CORE_LOG_FILE_RAM_ONLY
+    bool "RAM only based logging"
+config STDK_IOT_CORE_LOG_FILE_FLASH_WITH_RAM
+    bool "Flash with ram based logging"
+endchoice
+
+config STDK_IOT_CORE_LOG_FILE_RAM_BUF_SIZE
+    int "Ram buffer size"
+    default 1024
+    depends on STDK_IOT_CORE_LOG_FILE
+    help
+       Configuration ram buffer size that is releasted to amount logs to save at a time.
+
+choice CONFIG_STDK_IOT_CORE_BSP_SUPPORT_CY8CPROTO_062_4343W
+    bool "Mbed OS BSP Support"
+    default y
+    depends on STDK_IOT_CORE
+    help
+       Choose the bsp support layer
+endchoice
+
+choice STDK_IOT_CORE_OS_SUPPORT_MBEDOS
+    bool "Mbed OS Support"
+    default y
+    depends on STDK_IOT_CORE
+    help
+       Choose the os support layer
+endchoice
+
+config STDK_DEBUG_MEMORY_CHECK
+    bool "Enable debug option to check memory utilization"
+    default n
+    depends on STDK_IOT_CORE
+    help
+        If this debug option is enabled, IOT_MEM_CHECK will print memory utilization.
+
+menu "Security"
+    depends on STDK_IOT_CORE
+
+config STDK_IOT_CORE_USE_MBEDTLS
+    bool "Use mbedTLS for Crypto operations"
+    default y
+    depends on STDK_IOT_CORE
+    help
+       If this option is enabled, STDK will use thin wrappers around
+       mbedTLS for Crypto (sha, sign, ...) operations.
+
+choice STDK_IOT_CORE_CRYPTO_IDENTITY_KEYTYPE
+    prompt "Choose device identity key type"
+    default STDK_IOT_CORE_CRYPTO_SUPPORT_ED25519
+    depends on STDK_IOT_CORE
+    help
+       Choose the type of public key registered on the Device Identity.
+       This key is used for JWT/CWT as signature algorithm to identify
+       the device.
+
+config STDK_IOT_CORE_CRYPTO_SUPPORT_RSA
+    bool "RSA"
+config STDK_IOT_CORE_CRYPTO_SUPPORT_ECDSA
+    bool "ECDSA"
+config STDK_IOT_CORE_CRYPTO_SUPPORT_ED25519
+    bool "Ed25519"
+endchoice
+
+choice STDK_IOT_CORE_SECURITY_BACKEND
+    prompt "Choose security backend block"
+    default STDK_IOT_CORE_SECURITY_BACKEND_SOFTWARE
+    depends on STDK_IOT_CORE
+    help
+       Choose the backend block of security.
+       Software based module or Hardware based module.
+       Hardware based module supports SE(Secure Element).
+
+config STDK_IOT_CORE_SECURITY_BACKEND_SOFTWARE
+    bool "Software"
+config STDK_IOT_CORE_SECURITY_BACKEND_HARDWARE
+    bool "Hardware"
+endchoice
+
+menu "Hardware backend"
+    depends on STDK_IOT_CORE_SECURITY_BACKEND_HARDWARE
+
+choice STDK_IOT_CORE_SECURITY_BACKEND_HARDWARE_MODULE
+    prompt "Choose hardware backend module"
+    default STDK_IOT_CORE_SECURITY_BACKEND_HARDWARE_VIRTUAL
+    help
+       Choose the module for hardware backend.
+       Virtual is a virtual module for module implementation.
+
+config STDK_IOT_CORE_SECURITY_BACKEND_HARDWARE_VIRTUAL
+    bool "Virtual"
+endchoice
+
+endmenu
+
+choice STDK_IOT_CORE_FS_ENCRYPTION
+    prompt "Choose FS encryption method"
+    default STDK_IOT_CORE_FS_HW_ENCRYPTION
+    depends on STDK_IOT_CORE_SECURITY_BACKEND_SOFTWARE
+    help
+       Choose the file system encryption method.
+       Software based encryption or Hardware based encryption or
+       SE(Secure Element) based encryption.
+
+config STDK_IOT_CORE_FS_SW_ENCRYPTION
+    bool "Software"
+config STDK_IOT_CORE_FS_HW_ENCRYPTION
+    bool "Hardware"
+endchoice
+
+endmenu # Security
+
+menu "Network"
+    depends on STDK_IOT_CORE
+
+choice STDK_IOT_CORE_NET_INTERFACE
+    prompt "Choose Network interface"
+    default STDK_IOT_CORE_NET_MBEDTLS
+    depends on STDK_IOT_CORE
+    help
+       Choose the network interface library which mqtt want to use
+
+config STDK_IOT_CORE_NET_MBEDTLS
+    bool "mbedTLS"
+config STDK_IOT_CORE_NET_OPENSSL
+    bool "OpenSSL"
+endchoice
+
+endmenu # Network
+
+config MBED_HEAP_STATS_ENABLED
+    bool "Heap Stats"
+    default n
+    depends on STDK_IOT_CORE
+    help
+       Choose Mbed heap stats to enable.
+
+choice MBEDTLS_SSL_MAX_CONTENT_LEN
+    prompt "Mbedtls ssl max content len"
+    default MBEDTLS_SSL_MAX_CONTENT_LEN_4096
+    depends on STDK_IOT_CORE
+    help
+       Configuration ssl max content len.
+
+    config MBEDTLS_SSL_MAX_CONTENT_LEN_4096
+        bool "4096"
+    config MBEDTLS_SSL_MAX_CONTENT_LEN_8192
+        bool "8192"
+    config MBEDTLS_SSL_MAX_CONTENT_LEN_16384
+        bool "16384"
+endchoice
+
+config MBEDTLS_SSL_MAX_CONTENT_LEN
+    int
+    default 4096 if MBEDTLS_SSL_MAX_CONTENT_LEN_4096
+    default 8192 if MBEDTLS_SSL_MAX_CONTENT_LEN_8192
+    default 16384 if MBEDTLS_SSL_MAX_CONTENT_LEN_16384
+
+config MBEDTLS_SSL_DTLS_MAX_BUFFERING
+    int
+    default 8192 if MBEDTLS_SSL_MAX_CONTENT_LEN_4096
+    default 16384 if MBEDTLS_SSL_MAX_CONTENT_LEN_8192
+    default 32768 if MBEDTLS_SSL_MAX_CONTENT_LEN_16384
+
+endmenu # SmartThings IoT Core
