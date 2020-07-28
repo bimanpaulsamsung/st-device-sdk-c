@@ -20,17 +20,22 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/utsname.h>
 #include "iot_bsp_system.h"
 #include "iot_debug.h"
 
+static struct utsname uname_data;
+
 const char* iot_bsp_get_bsp_name(void)
 {
-       return "posix";
+	uname(&uname_data);
+	return uname_data.sysname;
 }
 
 const char* iot_bsp_get_bsp_version_string(void)
 {
-       return "";
+	uname(&uname_data);
+	return uname_data.version;
 }
 
 void iot_bsp_system_reboot(void)
