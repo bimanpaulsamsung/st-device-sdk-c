@@ -24,6 +24,9 @@
 #include "iot_bsp_system.h"
 #include "iot_debug.h"
 
+#define MACHINE_ID_FILE "/etc/machine-id"
+#define MACHINE_ID_LEN_BYTES 16
+
 static struct utsname uname_data;
 
 const char* iot_bsp_get_bsp_name(void)
@@ -74,21 +77,26 @@ iot_error_t iot_bsp_system_set_time_in_sec(const char* time_in_sec)
 
 iot_error_t iot_bsp_system_get_uniqueid(unsigned char **uid, size_t *olen)
 {
-	unsigned long hostid = gethostid();
-	unsigned char *id;
+	FILE *fp = NULL;
+	unsigned char *machine_id;
+	int pos;
 
-	id = (unsigned char*) malloc(4);
-	if (!id) {
+	machine_id = (unsigned char*)malloc(MACHINE_ID_LEN_BYTES);
+	if (!machine_id)
 		return IOT_ERROR_MEM_ALLOC;
+
+	fp = fopen(MACHINE_ID_FILE, "r");
+	if (!fp) {
+		printf("could not open the file: %s", MACHINE_ID_FILE);
+		return IOT_ERROR_READ_FAIL;
 	}
 
-	for (int i = 0; i < 4; i++) {
-		id[i] = (unsigned char) hostid;
-		hostid = hostid >> 8u;
-	}
+	for (pos = 0; pos < MACHINE_ID_LEN_BYTES && !feof(fp); pos++)
+		fscanf(fp, "%2hhx", &machine_id[pos]);
 
-	*uid = id;
-	*olen = 4;
+	fclose(fp);
+	*uid = machine_id;
+	*olen = MACHINE_ID_LEN_BYTES;
 
 	return IOT_ERROR_NONE;
 }
