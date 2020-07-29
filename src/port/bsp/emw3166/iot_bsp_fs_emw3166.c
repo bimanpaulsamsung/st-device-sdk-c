@@ -24,10 +24,10 @@
 #include "iot_debug.h"
 
 //mico system need to use this mount name as fs partition
-#define EMW_IOT_MOUNT_NAME	"0:"
-#define EMW_IOT_FSSIZE		0x10000  //64K
-#define EMW_IOT_BLOCK_SIZE  8		//FS operating with each 8bytes
-#define EMW_IOT_FD_NUM		128
+#define EMW_IOT_MOUNT_NAME      "0:"
+#define EMW_IOT_FSSIZE          0x10000  //64K
+#define EMW_IOT_BLOCK_SIZE      8  //FS operating with each 8bytes
+#define EMW_IOT_FD_NUM          128
 
 static bool initialized = false;
 static mico_filesystem_t iot_fs_handle;
@@ -41,7 +41,7 @@ static int _get_available_fd(void)
 
 	xSemaphoreTake((SemaphoreHandle_t)fd_mutex, portMAX_DELAY);
 
-	for(; i < EMW_IOT_FD_NUM; i++) {
+	for (; i < EMW_IOT_FD_NUM; i++) {
 		if (iot_fd_table[i] == NULL)
 		{
 			xSemaphoreGive(fd_mutex);
@@ -96,7 +96,7 @@ static iot_error_t _iot_bsp_mico_fs_init(void)
 	mico_filesystem_init( );
 
 	/* Mount FATFS file system. */
-	err = mico_filesystem_mount( &iot_block_device, MICO_FILESYSTEM_HANDLE_FATFS, &iot_fs_handle, EMW_IOT_MOUNT_NAME );
+	err = mico_filesystem_mount(&iot_block_device, MICO_FILESYSTEM_HANDLE_FATFS, &iot_fs_handle, EMW_IOT_MOUNT_NAME);
 	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_INIT_FAIL, "mico filesystem mount fail");
 
 	return IOT_ERROR_NONE;
@@ -112,18 +112,23 @@ iot_error_t iot_bsp_fs_init(void)
 
 	memset(iot_fd_table, 0, sizeof(iot_fd_table));
 	fd_mutex = xSemaphoreCreateMutex();
-
-	ret = _iot_bsp_mico_fs_init();
-	IOT_ERROR_CHECK(ret != IOT_ERROR_NONE, IOT_ERROR_INIT_FAIL, "fs init fail");
-
-	mico_filesystem_get_info( &iot_fs_handle, &fatfs_info, (char *)EMW_IOT_MOUNT_NAME );
-	if (fatfs_info.free_space > 0) {
-		initialized = true;
-		return IOT_ERROR_NONE;
+	if (fd_mutex == NULL) {
+		IOT_ERROR("xSemaphoreCreateMutex failed");
+		return IOT_ERROR_INIT_FAIL;
 	}
 
-	IOT_INFO("Format filesystem");
-	mico_filesystem_format( &iot_block_device,MICO_FILESYSTEM_HANDLE_FATFS );
+	ret = _iot_bsp_mico_fs_init();
+	if (ret != IOT_ERROR_NONE) {
+		vSemaphoreDelete(fd_mutex);
+		IOT_ERROR("mico fs init failed");
+		return IOT_ERROR_INIT_FAIL;
+	}
+
+	mico_filesystem_get_info(&iot_fs_handle, &fatfs_info, (char *)EMW_IOT_MOUNT_NAME);
+	if (fatfs_info.free_space <= 0) {
+		IOT_INFO("Format filesystem");
+		mico_filesystem_format(&iot_block_device, MICO_FILESYSTEM_HANDLE_FATFS);
+	}
 
 	initialized = true;
 	return IOT_ERROR_NONE;
@@ -152,7 +157,7 @@ iot_error_t iot_bsp_fs_open(const char* filename, iot_bsp_fs_open_mode_t mode, i
 	fh = (mico_file_t*)malloc(sizeof(mico_file_t));
 	IOT_ERROR_CHECK(fh == NULL, IOT_ERROR_MEM_ALLOC, "malloc file handle failed");
 
-	err = mico_filesystem_file_open( &iot_fs_handle, fh, filename, mico_mode );
+	err = mico_filesystem_file_open(&iot_fs_handle, fh, filename, mico_mode);
 
 	bsp_fd = _get_available_fd();
 	if ((err != kNoErr) || (bsp_fd == -1)) {
@@ -183,6 +188,7 @@ iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, size_t *le
 
 	data = (char*)malloc(fh->data.fatfs.fsize);
 	IOT_ERROR_CHECK(data == NULL, IOT_ERROR_MEM_ALLOC, "malloc data buffer failed");
+	memset(data, 0, fh->data.fatfs.fsize);
 
 	err = mico_filesystem_file_read(fh, data, fh->data.fatfs.fsize, &bytesread);
 	if (err == kNoErr) {
@@ -236,20 +242,12 @@ iot_error_t iot_bsp_fs_remove(const char* filename)
 {
 	OSStatus err = kNoErr;
 
-	mico_filesystem_file_delete(&iot_fs_handle, filename);
+	/*return MICO_FILESYSTEM_ERROR for all abnormal cases, including no file case,
+	  so we just give a message here, but not return error*/
+	err = mico_filesystem_file_delete(&iot_fs_handle, filename);
+	if (err != kNoErr) {
+		IOT_ERROR("%s is not removed normally, maybe something wrong or no such file.", filename);
+	}
 
-	return (err == kNoErr)? IOT_ERROR_NONE : IOT_ERROR_FS_REMOVE_FAIL;
-}
-
-void _scans_files_callback(char *path, char *fn)
-{
-    IOT_ERROR("path is %s,filename is %s", path, fn);
-}
-
-void iot_bsp_fs_list()
-{
-	OSStatus err = kNoErr;
-
-	err = mico_filesystem_scan_files( &iot_fs_handle, (char*)EMW_IOT_MOUNT_NAME, _scans_files_callback );
-	IOT_ERROR("fs scan return %d",err);
+	return IOT_ERROR_NONE;
 }

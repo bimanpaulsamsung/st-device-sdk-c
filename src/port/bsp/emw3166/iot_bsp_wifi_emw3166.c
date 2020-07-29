@@ -24,21 +24,27 @@
 #include "ipv4/lwip/ip_addr.h"
 #include "lwip/err.h"
 #include "lwip/dns.h"
-
+#include "sntp.h"
 
 #define DHCP_SERVER_IP		"192.168.4.1"
 
-const int WIFI_STA_START_BIT 		= 0x0001;
-const int WIFI_STA_CONNECT_BIT		= 0x0002;
-const int WIFI_STA_DISCONNECT_BIT	= 0x0004;
-const int WIFI_STA_SCAN_BIT			= 0x0008;
-const int WIFI_DNS_FOUND_BIT 		= 0x0010;
-const int WIFI_TIME_SET_BIT 		= 0x0020;
+const int WIFI_STA_START_BIT        = 0x0001;
+const int WIFI_STA_CONNECT_BIT      = 0x0002;
+const int WIFI_STA_DISCONNECT_BIT   = 0x0004;
+const int WIFI_STA_SCAN_BIT         = 0x0008;
+const int WIFI_DNS_FOUND_BIT        = 0x0010;
+const int WIFI_TIME_SET_BIT         = 0x0020;
 
 const int WIFI_EVENT_BIT_ALL = 0x01 | 0x02 | 0x04 | 0x08 | 0x10;
 
 static int WIFI_INITIALIZED = false;
 static EventGroupHandle_t wifi_event_group;
+
+struct bsp_scan_result_s {
+	iot_wifi_scan_result_t *buff;
+	uint16_t                num;
+};
+static struct bsp_scan_result_s g_scan_result;
 
 static void _time_synced_cb(void)
 {
@@ -50,18 +56,20 @@ static void _dns_found_cb(const char *name, ip_addr_t *ipaddr, void *callback_ar
 {
 	static int index = 0;
 	static int found = 0;
+	struct in_addr addr;
 
-	index++;
 	if (ipaddr == NULL) {
 		IOT_ERROR("ip address is not found for %s", name);
 	} else {
 		found++;
 		IOT_INFO("ip address found for %s, ip 0x%08x", name, ipaddr->addr);
 		//mico sntp support only 2 servers
+		addr.s_addr = ipaddr->addr;
 		if (index <= 1) {
-			sntp_set_server_ip_address(index, *ipaddr);
+			sntp_set_server_ip_address(index, addr);
 		}
 	}
+	index++;
 
 	// two server name both callback, and found at least one
 	if (index > 1 && found) {
@@ -128,7 +136,7 @@ static iot_error_t _iot_wifi_set_softap(iot_wifi_conf *conf)
 
 	if (strlen(conf->pass) >= sizeof(net_config.wifi_key)) {
 		IOT_ERROR("too long password to set driver");
-		return IOT_ERROR_INVALID_ARGS;
+		return IOT_ERROR_CONN_OPERATE_FAIL;
 	}
 
 	memset(&net_config, 0x0, sizeof(network_InitTypeDef_st));
@@ -146,7 +154,7 @@ static iot_error_t _iot_wifi_set_softap(iot_wifi_conf *conf)
 
 	IOT_INFO("ssid:%s  key:%s", net_config.wifi_ssid, net_config.wifi_key);
 	err = micoWlanStart(&net_config);
-	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_INVALID_ARGS, "set softap failed, err %d", err);
+	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_CONN_OPERATE_FAIL, "set softap failed, err %d", err);
 
 	return IOT_ERROR_NONE;
 }
@@ -186,20 +194,20 @@ static iot_error_t _iot_wifi_set_station(iot_wifi_conf *conf)
 
 	if ((strlen(conf->ssid) >= sizeof(net_config.wifi_ssid)) || (strlen(conf->pass) >= sizeof(net_config.wifi_key))) {
 		IOT_ERROR("too long ssid or password to set driver");
-		return IOT_ERROR_INVALID_ARGS;
+		return IOT_ERROR_CONN_OPERATE_FAIL;
 	}
 
 	/* Register user function when wlan connection status is changed */
 	err = mico_system_notify_register( mico_notify_WIFI_STATUS_CHANGED, (void *)_wifi_status_handler, NULL );
-	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_INIT_FAIL,"register wifi status fail");
+	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_CONN_OPERATE_FAIL,"register wifi status fail");
 
 	/* Register user function when wlan connection is faile in one attempt */
 	err = mico_system_notify_register( mico_notify_WIFI_CONNECT_FAILED, (void *)_connect_failed_handler, NULL );
-	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_INIT_FAIL,"register wifi connect fail");
+	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_CONN_OPERATE_FAIL,"register wifi connect fail");
 
 	/* Register user function when DHCP get ip from server */
 	err = mico_system_notify_register( mico_notify_DHCP_COMPLETED, (void *)_wifi_get_ip_handler, NULL );
-	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_INIT_FAIL,"register wifi got ip fail");
+	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_CONN_OPERATE_FAIL,"register wifi got ip fail");
 
 	memset(&net_config, 0x0, sizeof(network_InitTypeDef_st));
 
@@ -213,7 +221,7 @@ static iot_error_t _iot_wifi_set_station(iot_wifi_conf *conf)
 	/* Connect Now! , micoWlanStart return immediately in station mode*/
 	IOT_INFO("connecting to %s...", net_config.wifi_ssid);
 	err = micoWlanStart(&net_config);
-	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_BAD_REQ,"set station failed, err %d", err);
+	IOT_ERROR_CHECK(err != kNoErr, IOT_ERROR_CONN_CONNECT_FAIL,"set station failed, err %d", err);
 
 	return IOT_ERROR_NONE;
 }
@@ -246,7 +254,10 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 		break;
 
 	case IOT_WIFI_MODE_STATION:
-		_iot_wifi_set_station(conf);
+		ret = _iot_wifi_set_station(conf);
+		if (ret != IOT_ERROR_NONE) {
+			return ret;
+		}
 
 		uxBits = xEventGroupWaitBits(wifi_event_group, WIFI_STA_CONNECT_BIT, true, false, 2 * IOT_WIFI_CMD_TIMEOUT);
 		if((uxBits & WIFI_STA_CONNECT_BIT)) {
@@ -282,13 +293,11 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 	return ret;
 }
 
-iot_wifi_scan_result_t* iot_scan_buff;
-static uint16_t ap_num;
 static void _ap_list_callback(ScanResult *ap_list, void *arg)
 {
 	int i = 0;
 
-	if (!ap_list || !iot_scan_buff) {
+	if (!ap_list || !g_scan_result.buff) {
 		IOT_ERROR("ap_list 0x%x, or Scan buffer has been cleared.", ap_list);
 		return;
 	}
@@ -300,11 +309,11 @@ static void _ap_list_callback(ScanResult *ap_list, void *arg)
 
 		IOT_INFO("AP %d: Name = %s  | Strength=%ddbm", i, ap_list->ApList[i].ssid, ap_list->ApList[i].rssi);
 
-		strncpy(iot_scan_buff[i].ssid, ap_list->ApList[i].ssid, (sizeof(iot_scan_buff[i].ssid) - 1));
-		iot_scan_buff[i].rssi = ap_list->ApList[i].rssi;
+		strncpy(g_scan_result.buff[i].ssid, ap_list->ApList[i].ssid, (sizeof(g_scan_result.buff[i].ssid) - 1));
+		g_scan_result.buff[i].rssi = ap_list->ApList[i].rssi;
 	}
 
-	ap_num = i;
+	g_scan_result.num = i;
 	xEventGroupSetBits(wifi_event_group, WIFI_STA_SCAN_BIT);
 
 }
@@ -313,7 +322,8 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 {
 	EventBits_t uxBits = 0;
 
-	ap_num = 0;
+	g_scan_result.num = 0;
+	g_scan_result.buff = scan_result;
 
 	/* Register user function when wlan scan is completed */
 	mico_system_notify_register(mico_notify_WIFI_SCAN_COMPLETED, (void *)_ap_list_callback, NULL);
@@ -321,20 +331,18 @@ uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 	IOT_INFO("start scan mode, please wait...");
 	micoWlanStartScan( );
 
-	iot_scan_buff = scan_result;
-
 	uxBits = xEventGroupWaitBits(wifi_event_group, WIFI_STA_SCAN_BIT,
 				true, false, IOT_WIFI_CMD_TIMEOUT);
 
-	iot_scan_buff = NULL; //reset the buffer pointer for callback
+	g_scan_result.buff = NULL; //reset the buffer pointer for callback
 	if (uxBits & WIFI_STA_SCAN_BIT) {
-		IOT_INFO("Wifi scan finished, ap_num is %d", ap_num);
+		IOT_INFO("Wifi scan finished, ap number is %d", g_scan_result.num);
 	} else {
 		IOT_ERROR("WIFI_STA_SCAN_BIT event Timeout");
 		return 0;
 	}
 
-	return ap_num;
+	return g_scan_result.num;
 }
 
 iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac)
