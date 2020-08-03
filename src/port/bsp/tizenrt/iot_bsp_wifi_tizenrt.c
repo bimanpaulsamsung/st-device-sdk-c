@@ -226,6 +226,8 @@ int _iot_bsp_sta_mode(void)
 iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 {
 	int str_len = 0;
+	time_t now;
+	struct tm timeinfo;
 	wifi_manager_result_e res;
 	wifi_manager_softap_config_s sap_config;
 	wifi_manager_ap_config_s apconfig;
@@ -290,8 +292,12 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 
 			IOT_DEBUG("connect to ap SSID:%s password:%s", apconfig.ssid, apconfig.passphrase);
 
-			IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
-			_obtain_time();
+			time(&now);
+			localtime_r(&now, &timeinfo);
+			if (timeinfo.tm_year < (2016 - 1900)) {
+				IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
+				_obtain_time();
+			}
 		break;
 		case IOT_WIFI_MODE_SOFTAP:
 			memset(&sap_config, 0, sizeof(wifi_manager_softap_config_s));
