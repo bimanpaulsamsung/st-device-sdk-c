@@ -820,11 +820,15 @@ static int _iot_mqtt_connect_net(MQTTClient *client, st_mqtt_broker_info_t *brok
 	client->net->connection.ca_cert_len = broker->ca_cert_len;
 
 	do {
+		IOT_INFO("[TLS_conn] try to net->connect for MQTT");
 		iot_err = client->net->connect(client->net);
 		if (iot_err) {
 			IOT_ERROR("net->connect = %d, retry (%d)", iot_err, connect_retry);
 			connect_retry--;
 			iot_os_delay(2000);
+		} else {
+			IOT_INFO("[TLS_conn] net->connect done, forcely sleep 1s");
+			iot_os_delay(1000);
 		}
 	} while ((iot_err != IOT_ERROR_NONE) && connect_retry);
 
