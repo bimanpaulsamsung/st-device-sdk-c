@@ -520,10 +520,12 @@ static void _iot_mqtt_process_post_read(MQTTClient *client, iot_mqtt_packet_chun
 		case CONNACK:
 		case PUBACK:
 #ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
-			IOT_TIMERECORD_END("NET_EST", 0);
-			iot_util_timerecord_print("APP_ST");
-			iot_util_timerecord_print("MQTT_ST");
-			iot_util_timerecord_print("NET_EST");
+			if (chunk->packet_type == PUBACK) {
+				IOT_TIMERECORD_END("NET_EST", 0);
+				iot_util_timerecord_print("APP_ST");
+				iot_util_timerecord_print("MQTT_ST");
+				iot_util_timerecord_print("NET_EST");
+			}
 #endif
 		case SUBACK:
 		case UNSUBACK:
@@ -533,7 +535,9 @@ static void _iot_mqtt_process_post_read(MQTTClient *client, iot_mqtt_packet_chun
 			break;
 		case PUBLISH:
 #ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
-			IOT_TIMERECORD_START("MQTT_ST", 0);
+			if (chunk->packet_type == PUBLISH) {
+				IOT_TIMERECORD_START("MQTT_ST", 0);
+			}
 #endif
 			_iot_mqtt_process_received_publish(client, chunk);
 			break;
