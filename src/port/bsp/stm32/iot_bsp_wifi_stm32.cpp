@@ -17,9 +17,10 @@
  ****************************************************************************/
 
 #include "mbed.h"
-#include "WhdSoftAPInterface.h"
-#include "EthernetInterface.h"
-#include "lwip/apps/sntp.h"
+//#include "WhdSoftAPInterface.h"
+//#include "EthernetInterface.h"
+//#include "lwip/apps/sntp.h"
+#include "wifi.h"
 
 #include "iot_debug.h"
 #include "iot_bsp_wifi.h"
@@ -34,50 +35,50 @@
 static int WIFI_INITIALIZED = false;
 bool ap_mode = false;
 
-static void _initialize_sntp(void)
-{
-	IOT_INFO("Initializing SNTP");
-	sntp_setoperatingmode(SNTP_OPMODE_POLL);
-	sntp_setservername(0, "pool.ntp.org");
-	sntp_setservername(1, "1.kr.pool.ntp.org");
-	sntp_setservername(2, "1.asia.pool.ntp.org");
-	sntp_setservername(3, "us.pool.ntp.org");
-	sntp_setservername(4, "1.cn.pool.ntp.org");
-	sntp_setservername(5, "1.hk.pool.ntp.org");
-	sntp_setservername(6, "europe.pool.ntp.org");
-	sntp_setservername(7, "time1.google.com");
+//static void _initialize_sntp(void)
+//{
+//	IOT_INFO("Initializing SNTP");
+//	sntp_setoperatingmode(SNTP_OPMODE_POLL);
+//	sntp_setservername(0, "pool.ntp.org");
+//	sntp_setservername(1, "1.kr.pool.ntp.org");
+//	sntp_setservername(2, "1.asia.pool.ntp.org");
+//	sntp_setservername(3, "us.pool.ntp.org");
+//	sntp_setservername(4, "1.cn.pool.ntp.org");
+//	sntp_setservername(5, "1.hk.pool.ntp.org");
+//	sntp_setservername(6, "europe.pool.ntp.org");
+//	sntp_setservername(7, "time1.google.com");
+//
+//	sntp_init();
+//}
 
-	sntp_init();
-}
-
-static void _obtain_time(void) {
-	time_t now = 0;
-	struct tm timeinfo = { 0 };
-	int retry = 0;
-	const int retry_count = 10;
-
-	time(&now);
-	localtime_r(&now, &timeinfo);
-	IOT_INFO("DATE: (%02d-%02d-%04d %02d:%02d:02%d)", timeinfo.tm_mday,
-			timeinfo.tm_mon+1, timeinfo.tm_year+1900,
-			timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-
-	_initialize_sntp();
-
-	while (timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) {
-		IOT_INFO("Waiting for system time to be set... (%d/%d)", retry, retry_count);
-		IOT_DELAY(2000);
-		time(&now);
-		localtime_r(&now, &timeinfo);
-		IOT_INFO("DATE: (%02d-%02d-%04d %02d:%02d:02%d)", timeinfo.tm_mday,
-				timeinfo.tm_mon+1, timeinfo.tm_year+1900,
-				timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-	}
-
-	if (retry < 10) {
-		IOT_INFO("[WIFI] system time updated by %ld", now);
-	}
-}
+//static void _obtain_time(void) {
+//	time_t now = 0;
+//	struct tm timeinfo = { 0 };
+//	int retry = 0;
+//	const int retry_count = 10;
+//
+//	time(&now);
+//	localtime_r(&now, &timeinfo);
+//	IOT_INFO("DATE: (%02d-%02d-%04d %02d:%02d:02%d)", timeinfo.tm_mday,
+//			timeinfo.tm_mon+1, timeinfo.tm_year+1900,
+//			timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+//
+//	_initialize_sntp();
+//
+//	while (timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) {
+//		IOT_INFO("Waiting for system time to be set... (%d/%d)", retry, retry_count);
+//		IOT_DELAY(2000);
+//		time(&now);
+//		localtime_r(&now, &timeinfo);
+//		IOT_INFO("DATE: (%02d-%02d-%04d %02d:%02d:02%d)", timeinfo.tm_mday,
+//				timeinfo.tm_mon+1, timeinfo.tm_year+1900,
+//				timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+//	}
+//
+//	if (retry < 10) {
+//		IOT_INFO("[WIFI] system time updated by %ld", now);
+//	}
+//}
 
 iot_error_t iot_bsp_wifi_init()
 {
@@ -85,64 +86,56 @@ iot_error_t iot_bsp_wifi_init()
 		return IOT_ERROR_NONE;
 	}
 
-	WIFI_INITIALIZED = true;
+	if(WIFI_Init() !=  WIFI_STATUS_OK) {
+		IOT_ERROR("WiFi Initialization Failed");
+		return IOT_ERROR_UNINITIALIZED;
+	}
 
+	IOT_DEBUG("ES-WIFI Initialized.");
+	WIFI_INITIALIZED = true;
 	return IOT_ERROR_NONE;
 }
 
 static int connect_to_ap(char *wifi_ssid, char *wifi_password,
-		nsapi_security_t security = NSAPI_SECURITY_WPA_WPA2)
+		WIFI_Ecn_t security = WIFI_ECN_WPA2_PSK)
 {
-	WiFiInterface *wifi;
-	wifi = WiFiInterface::get_default_instance();
-	if (!wifi) {
-		IOT_ERROR("ERROR: No WiFiInterface found.");
+	uint8_t  IP_Addr[4];
+	if( WIFI_Connect(wifi_ssid, wifi_password, security) == WIFI_STATUS_OK) {
+		IOT_INFO("es-wifi module connected");
+
+		if(WIFI_GetIP_Address(IP_Addr) == WIFI_STATUS_OK) {
+			IOT_INFO("es-wifi module got IP Address : %d.%d.%d.%d",
+					IP_Addr[0],
+					IP_Addr[1],
+					IP_Addr[2],
+					IP_Addr[3]);
+		} else {
+			IOT_ERROR("es-wifi module CANNOT get IP address");
+			return -1;
+		}
+	} else {
+		IOT_ERROR("es-wifi module NOT connected");
 		return -1;
 	}
-
-	IOT_INFO("Connecting to %s...", wifi_ssid);
-	int ret = wifi->connect(wifi_ssid, wifi_password, security);
-	if (ret != 0) {
-		IOT_ERROR("Connection error: %d[0x%x]", ret, ret);
-		return -1;
-	}
-
-	IOT_INFO("Success");
-	SocketAddress wifi_ip_address;
-	wifi->get_ip_address(&wifi_ip_address);
-	IOT_DEBUG("IP: %s", wifi_ip_address.get_ip_address());
-	IOT_DEBUG("MAC: %s", wifi->get_mac_address());
-	IOT_DEBUG("Netmask: %s", wifi->get_netmask());
-	IOT_DEBUG("Gateway: %s", wifi->get_gateway());
-	IOT_DEBUG("RSSI: %d", wifi->get_rssi());
 	return 0;
 }
 
 static int start_ap(char *wifi_ssid, char *wifi_password,
-		nsapi_security_t security = NSAPI_SECURITY_WPA_WPA2)
+		WIFI_Ecn_t security = WIFI_ECN_WPA2_PSK)
 {
-	WhdSoftAPInterface *_wifi;
-	nsapi_error_t error_code;
-
-	_wifi = WhdSoftAPInterface::get_default_instance();
-	if (!_wifi) {
-		IOT_ERROR("ERROR: No WhdSoftAPInterface found.");
-		return -1;
-	}
-
 	if (ap_mode) {
 		IOT_WARN("AP mode Already UP");
 		return 0;
 	}
 
 	IOT_INFO("Starting AP...");
-	SocketAddress ipAddress(IOT_STDK_AP_IP);
-	SocketAddress netmask(IOT_STDK_AP_NETMASK);
-	SocketAddress gateway(IOT_STDK_AP_GATEWAY);
-	_wifi->set_network(ipAddress, netmask, gateway);
-	error_code = _wifi->start(wifi_ssid, wifi_password, security, IOT_STDK_AP_CHANNEL,
-			true, NULL, false);
-	IOT_ERROR_CHECK(error_code != NSAPI_ERROR_OK, -1, "Failed to Start AP");
+	if (WIFI_ConfigureAP((uint8_t *)wifi_ssid, (uint8_t *)wifi_password,
+			security, IOT_STDK_AP_CHANNEL, 1) == WIFI_STATUS_OK) {
+		IOT_INFO("> AP Started.\n");
+	} else {
+		IOT_ERROR("> ERROR : CANNOT Start AP\n");
+		return -1;
+	}
 
 	ap_mode = true;
 	IOT_INFO("AP started successfully");
@@ -151,24 +144,25 @@ static int start_ap(char *wifi_ssid, char *wifi_password,
 
 static int stop_ap(void)
 {
-	WhdSoftAPInterface *_wifi;
-	nsapi_error_t error_code;
-
-	_wifi = WhdSoftAPInterface::get_default_instance();
-	if (!_wifi) {
-		IOT_ERROR("ERROR: No WhdSoftAPInterface found.");
-		return -1;
-	}
-
-	if (!ap_mode) {
-		IOT_WARN("AP mode Already DOWN ");
-		return 0;
-	}
-
-	IOT_INFO("Stopping AP");
-	error_code = _wifi->stop();
-	IOT_ERROR_CHECK(error_code != NSAPI_ERROR_OK, -1, "Failed to Stop AP");
-
+	/* TODO: To be implemented */
+//	WhdSoftAPInterface *_wifi;
+//	nsapi_error_t error_code;
+//
+//	_wifi = WhdSoftAPInterface::get_default_instance();
+//	if (!_wifi) {
+//		IOT_ERROR("ERROR: No WhdSoftAPInterface found.");
+//		return -1;
+//	}
+//
+//	if (!ap_mode) {
+//		IOT_WARN("AP mode Already DOWN ");
+//		return 0;
+//	}
+//
+//	IOT_INFO("Stopping AP");
+//	error_code = _wifi->stop();
+//	IOT_ERROR_CHECK(error_code != NSAPI_ERROR_OK, -1, "Failed to Stop AP");
+//
 	ap_mode = false;
 	IOT_INFO("AP Stopped successfully");
 	return 0;
@@ -185,21 +179,18 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 		break;
 	}
 	case IOT_WIFI_MODE_SCAN: {
-		WiFiInterface *wifi;
-
-		IOT_DEBUG("SCAN in Mode: %s", ap_mode ? "AP Mode" : "STA Mode");
-		wifi = WiFiInterface::get_default_instance();
-		if (!wifi) {
-			IOT_ERROR("ERROR: No WiFiInterface found.");
-			return IOT_ERROR_NET_INVALID_INTERFACE;
-		}
-
+		WIFI_APs_t aps;
+		IOT_INFO("SCAN in Mode: %s", ap_mode ? "AP Mode" : "STA Mode");
 		IOT_INFO("Scan:");
-		int count = wifi->scan(NULL,0);
-		if (count <= 0) {
-			IOT_ERROR("scan() failed with return value: %d", count);
+		if (WIFI_ListAccessPoints(&aps, IOT_WIFI_MAX_SCAN_RESULT) == WIFI_STATUS_OK) {
+			for (int i = 0; i < aps.count; i++) {
+				IOT_INFO("#AP : %s", aps.ap[i].SSID);
+			}
+		} else {
+			IOT_ERROR("scan() failed");
 			return IOT_ERROR_CONN_OPERATE_FAIL;
 		}
+
 		break;
 	}
 	case IOT_WIFI_MODE_STATION: {
@@ -212,7 +203,7 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 		}
 
 		IOT_INFO("Time is not set yet. Connecting to WiFi and getting time over NTP.");
-		_obtain_time();
+//		_obtain_time();
 		break;
 	}
 	case IOT_WIFI_MODE_SOFTAP: {
@@ -229,20 +220,37 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 	return IOT_ERROR_NONE;
 }
 
-static iot_wifi_auth_mode_t get_security_from_nsapi(nsapi_security_t sec) {
+
+//static WIFI_Ecn_t nsapi_security_to_ecn(nsapi_security_t sec)
+//{
+//	switch (sec) {
+//	case NSAPI_SECURITY_NONE:
+//		return WIFI_ECN_OPEN;
+//	case NSAPI_SECURITY_WEP:
+//		return WIFI_ECN_WEP;
+//	case NSAPI_SECURITY_WPA:
+//		return WIFI_ECN_WPA_PSK;
+//	case NSAPI_SECURITY_WPA2:
+//		return WIFI_ECN_WPA2_PSK;
+//	case NSAPI_SECURITY_WPA_WPA2:
+//		return WIFI_ECN_WPA_WPA2_PSK;
+//	default:
+//		return WIFI_ECN_OPEN; /* TODO: Figure out other values */
+//	}
+//}
+
+static iot_wifi_auth_mode_t get_security_from_ecn(WIFI_Ecn_t sec) {
 	switch (sec) {
-	case NSAPI_SECURITY_NONE:
+	case WIFI_ECN_OPEN:
 		return IOT_WIFI_AUTH_OPEN;
-	case NSAPI_SECURITY_WEP:
+	case WIFI_ECN_WEP:
 		return IOT_WIFI_AUTH_WEP;
-	case NSAPI_SECURITY_WPA:
+	case WIFI_ECN_WPA_PSK:
 		return IOT_WIFI_AUTH_WPA_PSK;
-	case NSAPI_SECURITY_WPA2:
+	case WIFI_ECN_WPA2_PSK:
 		return IOT_WIFI_AUTH_WPA2_PSK;
-	case NSAPI_SECURITY_WPA_WPA2:
+	case WIFI_ECN_WPA_WPA2_PSK:
 		return IOT_WIFI_AUTH_WPA_WPA2_PSK;
-	case NSAPI_SECURITY_WPA2_ENT:
-		return IOT_WIFI_AUTH_WPA2_ENTERPRISE;
 	default:
 		return IOT_WIFI_AUTH_MAX;
 	}
@@ -250,75 +258,68 @@ static iot_wifi_auth_mode_t get_security_from_nsapi(nsapi_security_t sec) {
 
 uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 {
-	WiFiAccessPoint *ap;
-	WiFiInterface *wifi;
+	WIFI_APs_t aps;
+	int count = 0;
 
 	if (!scan_result) {
 		IOT_ERROR("ERROR: Invalid Parameter");
 		return 0;
 	}
 
-	wifi = WiFiInterface::get_default_instance();
-	if (!wifi) {
-		IOT_ERROR("ERROR: No WiFiInterface found.");
-		return 0;
-	}
-
 	IOT_INFO("Scan:");
-	int count = wifi->scan(NULL,0);
-	if (count <= 0) {
-		IOT_ERROR("scan() failed with return value: %d", count);
+
+	if (WIFI_ListAccessPoints(&aps, IOT_WIFI_MAX_SCAN_RESULT) == WIFI_STATUS_OK) {
+		for (int i = 0; i < aps.count; i++) {
+			IOT_INFO("#AP : %s", aps.ap[i].SSID);
+		}
+	} else {
+		IOT_ERROR("scan() failed");
 		return 0;
 	}
 
-	/* Limit number of networks */
-	count = count < IOT_WIFI_MAX_SCAN_RESULT ? count : IOT_WIFI_MAX_SCAN_RESULT;
-
-	ap = new WiFiAccessPoint[count];
-	count = wifi->scan(ap, count);
-
-	if (count <= 0) {
-		IOT_ERROR("scan() failed with return value: %d", count);
-		delete[] ap;
-		return 0;
-	}
+	count = aps.count;
 
 	for (int i = 0; i < count; i++) {
-		IOT_DEBUG("Network: %s secured: %d BSSID: %hhX:%hhX:%hhX:%hhx:%hhx:%hhx RSSI: %hhd Ch: %hhd", ap[i].get_ssid(),
-				ap[i].get_security(), ap[i].get_bssid()[0], ap[i].get_bssid()[1], ap[i].get_bssid()[2],
-				ap[i].get_bssid()[3], ap[i].get_bssid()[4], ap[i].get_bssid()[5], ap[i].get_rssi(), ap[i].get_channel());
+		WIFI_AP_t ap = aps.ap[i];
+		IOT_DEBUG("Network: %s secured: %d RSSI: %hhd Ch: %hhd", ap.SSID,
+				ap.Ecn, ap.RSSI, ap.Channel);
 
-		memcpy(scan_result[i].ssid, ap[i].get_ssid(), strlen(ap[i].get_ssid()));
-		const uint8_t *ap_mac = ap[i].get_bssid();
-		scan_result[i].bssid[0] = ap_mac[0];
-		scan_result[i].bssid[1] = ap_mac[1];
-		scan_result[i].bssid[2] = ap_mac[2];
-		scan_result[i].bssid[3] = ap_mac[3];
-		scan_result[i].bssid[4] = ap_mac[4];
-		scan_result[i].bssid[5] = ap_mac[5];
+		memcpy(scan_result[i].ssid, ap.SSID, strlen(ap.SSID));
+		/* TODO: Get BSSID */
+//		const uint8_t *ap_mac = ap[i].get_bssid();
+//		scan_result[i].bssid[0] = ap_mac[0];
+//		scan_result[i].bssid[1] = ap_mac[1];
+//		scan_result[i].bssid[2] = ap_mac[2];
+//		scan_result[i].bssid[3] = ap_mac[3];
+//		scan_result[i].bssid[4] = ap_mac[4];
+//		scan_result[i].bssid[5] = ap_mac[5];
 
-		scan_result[i].rssi = ap[i].get_rssi();
-		scan_result[i].freq = iot_util_convert_channel_freq(ap[i].get_channel());
-		scan_result[i].authmode = get_security_from_nsapi(ap[i].get_security());
+		scan_result[i].rssi = ap.RSSI;
+		scan_result[i].freq = iot_util_convert_channel_freq(ap.Channel);
+		scan_result[i].authmode = get_security_from_ecn(ap.Ecn);
 	}
 	IOT_INFO("%d networks available.", count);
 
-	delete[] ap;
 	return count;
 }
 
-//TODO: get correct MAC address
-extern "C" void mbed_mac_address(char *s);
-
 iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac) {
+	uint8_t  MAC_Addr[6];
+
 	if (!wifi_mac)
 		return IOT_ERROR_INVALID_ARGS;
 
-	char mac[6];
-	mbed_mac_address(mac);
+	if (WIFI_GetMAC_Address(MAC_Addr) == WIFI_STATUS_OK) {
+		IOT_INFO("es-wifi module MAC Address : %X:%X:%X:%X:%X:%X",
+				MAC_Addr[0], MAC_Addr[1], MAC_Addr[2], MAC_Addr[3],
+				MAC_Addr[4], MAC_Addr[5]);
+	} else {
+		IOT_ERROR("> ERROR : CANNOT get MAC address");
+		return IOT_ERROR_CONN_OPERATE_FAIL;
+	}
 
 	for (int i = 0; i < IOT_WIFI_MAX_BSSID_LEN; i++) {
-		wifi_mac->addr[i] = mac[i];
+		wifi_mac->addr[i] = MAC_Addr[i];
 	}
 
 	return IOT_ERROR_NONE;
