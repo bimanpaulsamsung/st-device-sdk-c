@@ -60,6 +60,8 @@ add_custom_command(
         BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/${ROOT_CA_SOURCE}
 )
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -include ${CMAKE_CURRENT_LIST_DIR}/include/iot_common.h")
+
 add_library(iotcore
         iot_api.c
         iot_capability.c
@@ -69,6 +71,8 @@ add_library(iotcore
         iot_util.c
         iot_uuid.c
         ${ROOT_CA_SOURCE}
+        iot_root_ca.c
+        iot_log_file.c
         iot_dump_log.c
         )
 
