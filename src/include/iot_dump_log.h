@@ -281,8 +281,4 @@ typedef enum {
 }
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _IOT_DUMP_LOG_H_ */
