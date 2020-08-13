@@ -1135,8 +1135,19 @@ int st_publish_event_raw(IOT_CTX *iot_ctx, char *event_payload)
 	json_root = JSON_CREATE_OBJECT();
 	JSON_ADD_ITEM_TO_OBJECT(json_root, "deviceEvents", json_arry);
 
+#if defined(STDK_IOT_CORE_SERIALIZE_CBOR)
+	iot_serialize_json2cbor(json_root, (uint8_t **)&final_msg.msg, (size_t *)&final_msg.msglen);
+#else
 	final_msg.msg = JSON_PRINT(json_root);
-	final_msg.msglen = strlen(final_msg.msg);
+	if (final_msg.msg != NULL) {
+		final_msg.msglen = strlen(final_msg.msg);
+	}
+#endif
+	if (final_msg.msg == NULL) {
+		IOT_ERROR("Fail to transfer to payload");
+		JSON_DELETE(json_root);
+		return IOT_ERROR_BAD_REQ;
+	}
 
 	ret = iot_os_queue_send(ctx->pub_queue, &final_msg, 0);
 	if (ret != IOT_OS_TRUE) {
