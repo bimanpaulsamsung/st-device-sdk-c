@@ -51,6 +51,24 @@ void iot_bsp_debug(iot_debug_level_t level, const char* tag, const char* fmt, ..
 	}
 }
 
+static unsigned int _iot_bsp_debug_get_free_heap_size(void)
+{
+	/* TODO: Implement get free heap size */
+	return 0;
+}
+
+static unsigned int _iot_bsp_debug_get_minimum_free_heap_size(void)
+{
+	/* TODO: Implement get minimum free heap size */
+	return 0;
+}
+
+static unsigned int _iot_bsp_debug_get_maximum_heap_size(void)
+{
+	/* TODO: Implement get maximum heap size */
+	return 0;
+}
+
 void iot_bsp_debug_check_heap(const char* tag, const char* func, const int line, const char* fmt, ...)
 {
 	static int count = 0;
