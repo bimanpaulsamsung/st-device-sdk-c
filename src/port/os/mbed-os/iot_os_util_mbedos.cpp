@@ -68,21 +68,23 @@ static osPriority_t get_mbed_priority(int priority)
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
 		void* data, int priority, iot_os_thread* thread_handle)
 {
-	Thread *thread = new Thread(get_mbed_priority(priority), stack_size, nullptr, name);
+	Thread *thread = new Thread();
 	IOT_ERROR_CHECK(!thread, IOT_OS_FALSE, "Memory allocation Failed!!!");
-
+	IOT_INFO("THREAD Create...");
 	osStatus status = thread->start(callback((callbackFN)thread_function, data));
+	IOT_INFO("THREAD Created");
 	if (status) {
 		delete thread;
+		IOT_INFO("CODE FLOW");
 		return IOT_OS_FALSE;
 	}
-
+	IOT_INFO("CODE FLOW");
 	if (threadlist.insert(thread) != LINKED_LIST_ERROR_NONE)
 		IOT_WARN("Failed to Insert");
-
+	IOT_INFO("CODE FLOW");
 	if (thread_handle)
 		*thread_handle = thread;
-
+	IOT_INFO("CODE FLOW");
 	return IOT_OS_TRUE;
 }
 
@@ -203,14 +205,14 @@ unsigned char iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
 
 	IOT_ERROR_CHECK(ef == NULL, IOT_OS_FALSE, "Invalid Event");
 
-	IOT_DEBUG("Any of bits to wait for: 0x%x", bits_to_wait_for);
+//	IOT_DEBUG("Any of bits to wait for: 0x%x", bits_to_wait_for);
 	ret = ef->wait_any((uint32_t)bits_to_wait_for, wait_time_ms, clear_on_exit);
 	if (ret & osFlagsError) {
-		IOT_DEBUG("Did not receive Event for bits 0x%x | Ret [0x%x]",
-				bits_to_wait_for, ret);
+//		IOT_DEBUG("Did not receive Event for bits 0x%x | Ret [0x%x]",
+//				bits_to_wait_for, ret);
 		return 0;
 	}
-	IOT_DEBUG("Received ANY | Bits: 0x%x | Value: 0x%x", bits_to_wait_for, ret);
+//	IOT_DEBUG("Received ANY | Bits: 0x%x | Value: 0x%x", bits_to_wait_for, ret);
 	return (unsigned char)ret;
 }
 
