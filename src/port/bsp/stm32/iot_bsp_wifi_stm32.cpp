@@ -34,6 +34,7 @@
 
 static int WIFI_INITIALIZED = false;
 bool ap_mode = false;
+WIFI_APs_t aps;
 
 //static void _initialize_sntp(void)
 //{
@@ -144,25 +145,12 @@ static int start_ap(char *wifi_ssid, char *wifi_password,
 
 static int stop_ap(void)
 {
-	/* TODO: To be implemented */
-//	WhdSoftAPInterface *_wifi;
-//	nsapi_error_t error_code;
-//
-//	_wifi = WhdSoftAPInterface::get_default_instance();
-//	if (!_wifi) {
-//		IOT_ERROR("ERROR: No WhdSoftAPInterface found.");
-//		return -1;
-//	}
-//
-//	if (!ap_mode) {
-//		IOT_WARN("AP mode Already DOWN ");
-//		return 0;
-//	}
-//
-//	IOT_INFO("Stopping AP");
-//	error_code = _wifi->stop();
-//	IOT_ERROR_CHECK(error_code != NSAPI_ERROR_OK, -1, "Failed to Stop AP");
-//
+	if (WIFI_StopAP() == WIFI_STATUS_OK) {
+		IOT_INFO("AP Stopped successfully");
+	} else {
+		IOT_INFO("Failed to Stop AP");
+	}
+
 	ap_mode = false;
 	IOT_INFO("AP Stopped successfully");
 	return 0;
@@ -170,16 +158,17 @@ static int stop_ap(void)
 
 iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 {
+	IOT_INFO("CODE FLOW");
 	if (!conf)
 		return IOT_ERROR_INVALID_ARGS;
-
+	IOT_INFO("CODE FLOW");
 	switch(conf->mode) {
 	case IOT_WIFI_MODE_OFF: {
+		IOT_INFO("CODE FLOW");
 		stop_ap();
 		break;
 	}
 	case IOT_WIFI_MODE_SCAN: {
-		WIFI_APs_t aps;
 		IOT_INFO("SCAN in Mode: %s", ap_mode ? "AP Mode" : "STA Mode");
 		IOT_INFO("Scan:");
 		if (WIFI_ListAccessPoints(&aps, IOT_WIFI_MAX_SCAN_RESULT) == WIFI_STATUS_OK) {
@@ -190,7 +179,7 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 			IOT_ERROR("scan() failed");
 			return IOT_ERROR_CONN_OPERATE_FAIL;
 		}
-
+		IOT_INFO("CODE FLOW");
 		break;
 	}
 	case IOT_WIFI_MODE_STATION: {
@@ -207,6 +196,7 @@ iot_error_t iot_bsp_wifi_set_mode(iot_wifi_conf *conf)
 		break;
 	}
 	case IOT_WIFI_MODE_SOFTAP: {
+		IOT_INFO("CODE FLOW");
 		if (start_ap(conf->ssid, conf->pass) < 0)
 			return IOT_ERROR_CONN_OPERATE_FAIL;
 
@@ -258,7 +248,6 @@ static iot_wifi_auth_mode_t get_security_from_ecn(WIFI_Ecn_t sec) {
 
 uint16_t iot_bsp_wifi_get_scan_result(iot_wifi_scan_result_t *scan_result)
 {
-	WIFI_APs_t aps;
 	int count = 0;
 
 	if (!scan_result) {
