@@ -1024,7 +1024,7 @@ static void _iot_main_task(struct iot_context *ctx)
 #if !defined(STDK_MQTT_TASK)
 	unsigned int task_cycle = IOT_MAIN_TASK_DEFAULT_CYCLE;
 #endif
-
+	iot_device_cleanup(ctx);
 	for( ; ; ) {
 #if defined(STDK_MQTT_TASK)
 		curr_events = iot_os_eventgroup_wait_bits(ctx->iot_events,

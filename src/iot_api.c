@@ -91,27 +91,30 @@ iot_error_t iot_wifi_ctrl_request(struct iot_context *ctx,
 		IOT_ERROR("There is no ctx\n");
 		return IOT_ERROR_BAD_REQ;
 	}
-
+	IOT_INFO("CODE FLOW");
 	memset(&wifi_conf, 0, sizeof(wifi_conf));
 	wifi_conf.mode = wifi_mode;
-
+	IOT_INFO("wifi_mode: %d", wifi_mode);
 	switch (wifi_mode) {
 	case IOT_WIFI_MODE_OFF:
+		IOT_INFO("CODE FLOW");
 		/* fall through */
 	case IOT_WIFI_MODE_STATION:
+		IOT_INFO("CODE FLOW");
 		/* easysetup resource deinit & free for both */
 		if (ctx->es_http_ready) {
 			ctx->es_http_ready = false;
 			iot_easysetup_deinit(ctx);
 		}
-
+		IOT_INFO("CODE FLOW");
 		if (ctx->scan_result) {
 			free(ctx->scan_result);
 			ctx->scan_result = NULL;
 		}
 		ctx->scan_num = 0;
-
+		IOT_INFO("CODE FLOW");
 		if (wifi_mode == IOT_WIFI_MODE_STATION) {
+			IOT_INFO("CODE FLOW");
 			memcpy(wifi_conf.ssid, ctx->prov_data.wifi.ssid,
 				strlen(ctx->prov_data.wifi.ssid));
 			memcpy(wifi_conf.pass, ctx->prov_data.wifi.password,
@@ -119,37 +122,39 @@ iot_error_t iot_wifi_ctrl_request(struct iot_context *ctx,
 			wifi_conf.authmode = ctx->prov_data.wifi.security_type;
 		} else {	/* For IOT_WIFI_MODE_OFF case */
 			send_cmd = false;
-
+			IOT_INFO("CODE FLOW");
 			iot_err = iot_bsp_wifi_set_mode(&wifi_conf);
 			if (iot_err != IOT_ERROR_NONE) {
 				IOT_ERROR("failed to set wifi_set_mode for scan\n");
 				return iot_err;
 			}
 		}
+		IOT_INFO("CODE FLOW");
 		break;
 
 	case IOT_WIFI_MODE_SOFTAP:
 		/*wifi soft-ap mode w/ ssid E4 format*/
+		IOT_INFO("CODE FLOW");
 		iot_err = iot_easysetup_create_ssid(&(ctx->devconf),
 					wifi_conf.ssid, IOT_WIFI_MAX_SSID_LEN);
 		if (iot_err != IOT_ERROR_NONE) {
 			IOT_ERROR("Can't create ssid for easysetup.(%d)", iot_err);
 			return iot_err;
 		}
-
+		IOT_INFO("CODE FLOW");
 		snprintf(wifi_conf.pass, sizeof(wifi_conf.pass), "1111122222");
 		wifi_conf.authmode = IOT_WIFI_AUTH_WPA_WPA2_PSK;
 		break;
 
 	case IOT_WIFI_MODE_SCAN:
 		send_cmd = false;
-
+		IOT_INFO("CODE FLOW");
 		iot_err = iot_bsp_wifi_set_mode(&wifi_conf);
 		if (iot_err != IOT_ERROR_NONE) {
 			IOT_ERROR("failed to set wifi_set_mode for scan\n");
 			return iot_err;
 		}
-
+		IOT_INFO("CODE FLOW");
 		if (!ctx->scan_result) {
 			ctx->scan_result = (iot_wifi_scan_result_t *)iot_os_malloc(IOT_WIFI_MAX_SCAN_RESULT * sizeof(iot_wifi_scan_result_t));
 			if (!ctx->scan_result) {
@@ -158,7 +163,7 @@ iot_error_t iot_wifi_ctrl_request(struct iot_context *ctx,
 			}
 			memset(ctx->scan_result, 0x0, (IOT_WIFI_MAX_SCAN_RESULT * sizeof(iot_wifi_scan_result_t)));
 		}
-
+		IOT_INFO("CODE FLOW");
 		ctx->scan_num = iot_bsp_wifi_get_scan_result(ctx->scan_result);
 		break;
 
@@ -166,13 +171,14 @@ iot_error_t iot_wifi_ctrl_request(struct iot_context *ctx,
 		IOT_ERROR("Unsupported wifi ctrl mode[%d]\n", wifi_mode);
 		return IOT_ERROR_BAD_REQ;
 	}
-
+	IOT_INFO("CODE FLOW");
 	if (send_cmd) {
+		IOT_INFO("CODE FLOW");
 		iot_err = iot_command_send(ctx,
 				IOT_COMMAND_NETWORK_MODE,
 					&wifi_conf, sizeof(wifi_conf));
 	}
-
+	IOT_INFO("CODE FLOW");
 	return iot_err;
 }
 
