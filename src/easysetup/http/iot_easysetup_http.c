@@ -119,6 +119,7 @@ iot_error_t _iot_easysetup_gen_get_payload(struct iot_context *ctx, int cmd, cha
 	if ((cur_step != ref_step) && (cur_step < IOT_EASYSETUP_STEP_LOG_SYSTEMINFO)) {
 		if ((cur_step == IOT_EASYSETUP_STEP_WIFISCANINFO) && (ref_step == IOT_EASYSETUP_STEP_CONFIRM)) {
 			ref_step = IOT_EASYSETUP_STEP_WIFISCANINFO;
+			IOT_INFO("ref_step %d", ref_step);
 		} else {
 			IOT_ERROR("Invalid command step %d", cmd);
 			IOT_ES_DUMP(IOT_DEBUG_LEVEL_ERROR, IOT_DUMP_EASYSETUP_INVALID_CMD, cmd);
@@ -127,10 +128,13 @@ iot_error_t _iot_easysetup_gen_get_payload(struct iot_context *ctx, int cmd, cha
 		}
 	}
 
-	if (cur_step < IOT_EASYSETUP_STEP_LOG_SYSTEMINFO)
+	if (cur_step < IOT_EASYSETUP_STEP_LOG_SYSTEMINFO) {
 		ref_step++;
-	else
+		IOT_INFO("ref_step %d", ref_step);
+	} else {
 		ref_step = 0;
+		IOT_INFO("ref_step %d", ref_step);
+	}
 
 	err = iot_easysetup_request(ctx, cur_step, NULL);
 	if (err) {
@@ -170,6 +174,7 @@ fail_status_update:
 	if (err) {
 		iot_error_t err1;
 		ref_step = 0;
+		IOT_INFO("ref_step %d", ref_step);
 		if (cur_step >= IOT_EASYSETUP_STEP_LOG_SYSTEMINFO) {
 			err1 = iot_state_update(ctx, IOT_STATE_CHANGE_FAILED, ctx->curr_state);
 			if (err1) {
@@ -217,12 +222,13 @@ iot_error_t _iot_easysetup_gen_post_payload(struct iot_context *ctx, int cmd, ch
 	}
 
 	cur_step = cmd;
-
+	IOT_INFO("cur_step:%d | ref_step:%d", cur_step, ref_step);
 	if ((cur_step != ref_step) && (cur_step < IOT_EASYSETUP_STEP_LOG_SYSTEMINFO)) {
 		if (cur_step == IOT_EASYSETUP_STEP_WIFIPROVIONINGINFO) {
-		   if ((ref_step == IOT_EASYSETUP_STEP_CONFIRM) || (ref_step == IOT_EASYSETUP_STEP_CONFIRMINFO))
+		   if ((ref_step == IOT_EASYSETUP_STEP_CONFIRM) || (ref_step == IOT_EASYSETUP_STEP_CONFIRMINFO)) {
 			   ref_step = IOT_EASYSETUP_STEP_WIFIPROVIONINGINFO;
-		   else {
+			   IOT_INFO("ref_step %d", ref_step);
+		   } else {
 			   IOT_ERROR("Invalid command sequence %d", cmd);
 			   IOT_ES_DUMP(IOT_DEBUG_LEVEL_ERROR, IOT_DUMP_EASYSETUP_INVALID_SEQUENCE, cmd);
 			   err = IOT_ERROR_EASYSETUP_INVALID_SEQUENCE;
@@ -236,10 +242,13 @@ iot_error_t _iot_easysetup_gen_post_payload(struct iot_context *ctx, int cmd, ch
 		}
 	}
 
-	if (cur_step < IOT_EASYSETUP_STEP_LOG_SYSTEMINFO)
+	if (cur_step < IOT_EASYSETUP_STEP_LOG_SYSTEMINFO) {
 		ref_step++;
-	else
+		IOT_INFO("ref_step %d", ref_step);
+	} else {
 		ref_step = 0;
+		IOT_INFO("ref_step %d", ref_step);
+	}
 
 	err = iot_easysetup_request(ctx, cur_step, in_payload);
 	if (err) {
@@ -284,6 +293,7 @@ iot_error_t _iot_easysetup_gen_post_payload(struct iot_context *ctx, int cmd, ch
 	if (err) {
 		iot_error_t err1;
 		ref_step = 0;
+		IOT_INFO("ref_step %d", ref_step);
 		if (cur_step >= IOT_EASYSETUP_STEP_LOG_SYSTEMINFO) {
 			err1 = iot_state_update(ctx, IOT_STATE_CHANGE_FAILED, ctx->curr_state);
 			if (err1) {
@@ -432,7 +442,7 @@ iot_error_t iot_easysetup_init(struct iot_context *ctx)
 
 	es_http_init();
 	ref_step = 0;
-
+	IOT_INFO("ref_step %d", ref_step);
 #if defined(CONFIG_STDK_IOT_CORE_EASYSETUP_LOG_SUPPORT_NO_USE_LOGFILE)
 	if ((log_buffer = (char *)malloc(CONFIG_STDK_IOT_CORE_EASYSETUP_HTTP_LOG_SIZE)) == NULL) {
 		IOT_ERROR("failed to malloc for log buffer");

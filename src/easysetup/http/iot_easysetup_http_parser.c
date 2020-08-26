@@ -79,11 +79,18 @@ iot_error_t es_msg_parser(char *rx_buffer, size_t rx_buffer_len, char **payload,
 	uri = strtok(NULL, " \t");
 	prot = strtok(NULL, " \t\r\n");
 
+
+
 	if ((method == NULL) || (uri == NULL) || (prot == NULL))
 	{
 		IOT_ERROR("invalid data reported");
 		return IOT_ERROR_INVALID_ARGS;
 	}
+
+	IOT_INFO("Method: %s", method);
+	IOT_INFO("URL: %s", uri);
+	IOT_INFO("PROTOCOL: %s", prot);
+//	IOT_INFO("rx_buffer: %s", rx_buffer);
 
 	header_t *h = reqhdr;
 	char *t = NULL;
@@ -95,13 +102,14 @@ iot_error_t es_msg_parser(char *rx_buffer, size_t rx_buffer_len, char **payload,
 		if (!k)
 			break;
 
+//		IOT_INFO("K: %s", k);
 		v = strtok(NULL, "\r\n");
 		while (*v && *v == ' ')
 			v++;
 
 		h->name = k;
 		h->value = v;
-
+		IOT_INFO("Name: %s\nValue: %s", h->name, h->value);
 		if (is_header_content_length(h->name)) {
 			*content_len = atoi(h->value);
 		}
@@ -114,13 +122,16 @@ iot_error_t es_msg_parser(char *rx_buffer, size_t rx_buffer_len, char **payload,
 			break;
 	}
 
+//	IOT_INFO("T: %s", t);
 	if (t == NULL) {
 		t = prot + strlen(prot) + 3;
 	} else {
 		t++;
 	}
+//	IOT_INFO("T: %s", t);
 
 	if (!strcmp(method,  "GET")) {
+		IOT_INFO("GET");
 		*type = D2D_GET;
 		if (!strcmp(uri, IOT_ES_URI_GET_DEVICEINFO)) {
 			*cmd = IOT_EASYSETUP_STEP_DEVICEINFO;
@@ -136,6 +147,7 @@ iot_error_t es_msg_parser(char *rx_buffer, size_t rx_buffer_len, char **payload,
 		}
 	}
 	else if (!strcmp(method,  "POST")) {
+		IOT_INFO("POST");
 		if ((t + 2) < (rx_buffer + rx_buffer_len)) {
 			*payload = t + 2;
 		}
@@ -156,7 +168,8 @@ iot_error_t es_msg_parser(char *rx_buffer, size_t rx_buffer_len, char **payload,
 			IOT_ERROR("[POST] invalid step : %s", uri);
 			*cmd = IOT_EASYSETUP_INVALID_STEP;
 		}
-		IOT_DEBUG("payload : %s", payload);
+		IOT_DEBUG("cmd : %d", *cmd);
+		IOT_DEBUG("payload : %s", *payload);
 	} else {
 		IOT_ERROR("[%s] not support type : %s", prot, method);
 		*type = D2D_ERROR;
