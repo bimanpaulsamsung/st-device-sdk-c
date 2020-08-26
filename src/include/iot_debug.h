@@ -106,17 +106,17 @@ extern char *iot_debug_get_log(void);
  *
  * Macro to use log function
  */
-#if defined(CONFIG_STDK_IOT_CORE_LOG_LEVEL_DEBUG)
+//#if defined(CONFIG_STDK_IOT_CORE_LOG_LEVEL_DEBUG)
 #define IOT_DEBUG(fmt, args...) iot_bsp_debug(IOT_DEBUG_LEVEL_DEBUG, IOT_DEBUG_PREFIX, "%s(%d) > " fmt, __FUNCTION__, __LINE__, ##args)
 #define HIT() iot_bsp_debug(IOT_DEBUG_LEVEL_DEBUG, IOT_DEBUG_PREFIX, "%s(%d) > " COLOR_CYAN ">>>HIT<<<" COLOR_END, __FUNCTION__, __LINE__)
 #define ENTER() iot_bsp_debug(IOT_DEBUG_LEVEL_DEBUG, IOT_DEBUG_PREFIX, "%s(%d) > " COLOR_CYAN "ENTER >>>>" COLOR_END, __FUNCTION__, __LINE__)
 #define LEAVE() iot_bsp_debug(IOT_DEBUG_LEVEL_DEBUG, IOT_DEBUG_PREFIX, "%s(%d) > " COLOR_CYAN "LEAVE <<<<" COLOR_END, __FUNCTION__, __LINE__)
-#else
-#define IOT_DEBUG(fmt, args...)
-#define HIT()
-#define ENTER()
-#define LEAVE()
-#endif
+//#else
+//#define IOT_DEBUG(fmt, args...)
+//#define HIT()
+//#define ENTER()
+//#define LEAVE()
+//#endif
 
 
 /**
