@@ -559,6 +559,8 @@ static int _iot_mqtt_run_read_stream(MQTTClient *client)
 		goto exit;
 	}
 	read++;
+	IOT_WARN("START MQTT PACKET");
+	IOT_WARN("HEADER: %02x", packet_fixed_header[0]);
 	do {
 		if (read - 1 >= MAX_NUM_OF_REMAINING_LENGTH_BYTES) {
 			read = E_ST_MQTT_NETWORK_ERROR;
@@ -569,6 +571,7 @@ static int _iot_mqtt_run_read_stream(MQTTClient *client)
 			read = E_ST_MQTT_NETWORK_ERROR;
 			goto exit;
 		}
+		IOT_WARN("HEADER: %02x", packet_fixed_header[read]);
 		rem_size += (packet_fixed_header[read] & 127) * multiplier;
 		multiplier *= 128;
 		read++;
@@ -589,6 +592,10 @@ static int _iot_mqtt_run_read_stream(MQTTClient *client)
 			read = E_ST_MQTT_NETWORK_ERROR;
 			goto exit;
 		} else {
+			for (int i = 0; i< rc; i++) {
+				printf("%02x ", w_chunk->chunk_data[read+i]);
+			}
+			printf("\nEND MQTT PACKET\n");
 			read += rc;
 			iot_os_timer_count_ms(expiry_timer, MQTT_READ_TIMEOUT);
 		}
@@ -775,20 +782,27 @@ static int _iot_mqtt_connect_net(MQTTClient *client, st_mqtt_broker_info_t *brok
 		return E_ST_MQTT_FAILURE;
 	}
 
+	IOT_WARN("FLOW");
 	iot_err = iot_net_init(client->net);
 	if (iot_err) {
 		IOT_ERROR("failed to init network");
 		rc = E_ST_MQTT_FAILURE;
 		goto exit;
 	}
-
+	IOT_WARN("FLOW");
 	client->net->connection.url = broker->url;
+	IOT_WARN("FLOW");
 	client->net->connection.port = broker->port;
+	IOT_WARN("FLOW");
 	client->net->connection.ca_cert = broker->ca_cert;
+	IOT_WARN("FLOW");
 	client->net->connection.ca_cert_len = broker->ca_cert_len;
+	IOT_WARN("FLOW");
 
 	do {
+		IOT_WARN("FLOW");
 		iot_err = client->net->connect(client->net);
+		IOT_WARN("FLOW");
 		if (iot_err) {
 			IOT_ERROR("net->connect = %d, retry (%d)", iot_err, connect_retry);
 			connect_retry--;
