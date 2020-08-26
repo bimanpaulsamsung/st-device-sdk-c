@@ -6,6 +6,7 @@ src/deps/mbedtls/mbedtls/
 src/iot_root_ca.c
 tools/keygen/linux/ed25519*
 tools/keygen/linux/output_*
+tools/keygen/output_*
 doc/doxygen/
 build/
 output/

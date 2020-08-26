@@ -21,9 +21,9 @@
 
 unsigned int iot_bsp_random()
 {
-	uint32_t random_seed;
+	uint32_t random_num;
 
-	MicoRandomNumberRead(&random_seed, sizeof(random_seed));
+	MicoRandomNumberRead(&random_num, sizeof(random_num));
 
-	return random_seed;
+	return random_num;
 }

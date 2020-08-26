@@ -30,7 +30,6 @@ typedef struct nv_item_table
 } nv_item_table_s;
 
 #define MAX_NV_ITEM_CNT			19
-
 #define STDK_NV_SECTOR_SIZE            (0x1000)
 
 nv_item_table_s nv_table[MAX_NV_ITEM_CNT] = {
@@ -66,7 +65,7 @@ mico_mutex_t flash_mutex;
 
 static void device_mutex_lock(void)
 {
-	if(flash_mutex == NULL)
+	if (flash_mutex == NULL)
 		mico_rtos_init_mutex(&flash_mutex);
 	mico_rtos_lock_mutex(&flash_mutex);
 }
@@ -129,7 +128,7 @@ static int nv_storage_read(const char *store, uint8_t *buf, size_t *size)
 	idx = nv_get_table_idx(store);
 	if (idx < 0) {
 		IOT_ERROR("do not allow new item %s\n", store);
-		return -1;
+		return -2;
 	}
 
 	read_size = (nv_table[idx].size > *size) ? *size : nv_table[idx].size;
@@ -289,6 +288,6 @@ iot_error_t iot_bsp_fs_remove(const char* filename)
 	int ret;
 
 	ret = nv_storage_erase(filename);
-	IOT_ERROR_CHECK(ret != 0, IOT_ERROR_FS_WRITE_FAIL, "nvs erase fail ");
+	IOT_ERROR_CHECK(ret != 0, IOT_ERROR_FS_REMOVE_FAIL, "nvs erase fail ");
 	return IOT_ERROR_NONE;
 }
