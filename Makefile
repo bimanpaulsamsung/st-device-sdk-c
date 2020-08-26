@@ -3,14 +3,14 @@ TOPDIR	:= $(CURDIR)
 include stdkconfig
 include $(TOPDIR)/make/common.mk
 
-ifeq ($(OS),linux)
-CFLAGS_CONFIG += -DCONFIG_STDK_IOT_CORE_BSP_LINUX
+ifeq ($(BSP_NAME),ubuntu)
+CFLAGS_CONFIG += -DCONFIG_STDK_IOT_CORE_BSP_UBUNTU
 else
 CFLAGS_CONFIG += -DSTDK_IOT_CORE_EASYSETUP_POSIX_TESTING
 endif
 
-ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_LINUX, $(CFLAGS_CONFIG)),)
-BSP_DIR = src/port/bsp/linux
+ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_UBUNTU, $(CFLAGS_CONFIG)),)
+BSP_DIR = src/port/bsp/ubuntu
 else
 BSP_DIR = src/port/bsp/posix
 endif
@@ -30,7 +30,7 @@ CBOR_DIR = src/deps/cbor/tinycbor/src
 
 CFLAGS	:= -std=c99 -D_GNU_SOURCE
 CFLAGS	+= $(CFLAGS_CONFIG)
-ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_LINUX, $(CFLAGS_CONFIG)),)
+ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_UBUNTU, $(CFLAGS_CONFIG)),)
 CFLAGS	+= $(shell pkg-config --cflags gio-2.0 glib-2.0)
 endif
 

@@ -31,7 +31,7 @@
 
 #include "iot_debug.h"
 #include "iot_bsp_wifi.h"
-#include "iot_bsp_wifi_supplicant_linux.h"
+#include "iot_bsp_wifi_supplicant_ubuntu.h"
 
 #define SUPPLICANT_PROP_INTERFACE "org.freedesktop.DBus.Properties"
 #define SUPPLICANT_SERVICE "fi.w1.wpa_supplicant1"

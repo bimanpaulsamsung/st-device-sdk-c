@@ -45,7 +45,7 @@
 #include "iot_util.h"
 #include "iot_debug.h"
 #include "iot_bsp_wifi.h"
-#include "iot_bsp_wifi_supplicant_linux.h"
+#include "iot_bsp_wifi_supplicant_ubuntu.h"
 
 /* Few linux machines set default time to 1 APR 2020 */
 #define NTP_REFERENCE_TIME_YEAR (2020 - 1900)
