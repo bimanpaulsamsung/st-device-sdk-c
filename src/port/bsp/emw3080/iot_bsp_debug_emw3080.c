@@ -67,16 +67,16 @@ void iot_bsp_debug(iot_debug_level_t level, const char* tag, const char* fmt, ..
 
 void iot_bsp_debug_check_heap(const char* tag, const char* func, const int line, const char* fmt, ...)
 {
-    static int count = 0;
-    micoMemInfo_t *meminfo = mico_memory_info();
+	static int count = 0;
+	micoMemInfo_t *meminfo = mico_memory_info();
 
-    if (count == 0) {
-        printf("%s: %s(%d) > [MEMCHK][%d] Heap total size : %d\r\n", tag, func, line, count, meminfo->total_memory);
-    }
+	if (count == 0) {
+		printf("%s: %s(%d) > [MEMCHK][%d] Heap total size : %d\r\n", tag, func, line, count, meminfo->total_memory);
+	}
 
-    printf("%s: %s(%d) > [MEMCHK][%d] allocated(used):%d, freed:%d, total memory:%d, number of chunks:%d\r\n",tag, func, line, ++count,
-            meminfo->allocted_memory,
-            meminfo->free_memory,
-            meminfo->total_memory,
-            meminfo->num_of_chunks);
+	printf("%s: %s(%d) > [MEMCHK][%d] allocated(used):%d, freed:%d, total memory:%d, number of chunks:%d\r\n",tag, func, line, ++count,
+			meminfo->allocted_memory,
+			meminfo->free_memory,
+			meminfo->total_memory,
+			meminfo->num_of_chunks);
 }
