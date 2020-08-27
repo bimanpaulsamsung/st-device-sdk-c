@@ -5,7 +5,7 @@ LIB_NAME = iotcore
 INC = -I../src/include
 LIB_DIR = -L../output
 LIBS = -l$(LIB_NAME) -lssl -lpthread -lrt -lcrypto
-ifeq ($(OS),linux)
+ifeq ($(BSP_NAME),ubuntu)
 LIBS += $(shell pkg-config --libs gio-2.0 glib-2.0)
 endif
 SRCS = example.c
