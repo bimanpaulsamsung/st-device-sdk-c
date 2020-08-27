@@ -548,20 +548,22 @@ int supplicant_turn_wifi_on(void)
 
 void supplicant_initialise_wifi(void)
 {
-	char *const args_wpa_restart[] = {"/bin/systemctl", "restart", "wpa_supplicant", NULL};
-        char *const envs[] = { NULL };
+	char *const args_kill_wpa[] = {"/usr/bin/killall", "wpa_supplicant", NULL};
+	char *const envs[] = { NULL };
 	int ret;
 
-	ret = supplicant_execute_command(args_wpa_restart[0], &args_wpa_restart[0], envs);
-        if (ret < 0)
-                IOT_INFO("failed to restart wpa_supplicant %d", ret);
+	ret = supplicant_execute_command(args_kill_wpa[0], &args_kill_wpa[0], envs);
+	if (ret < 0)
+		IOT_INFO("failed to kill wpa_supplicant (%d)", ret);
 
-        supplicant_stop_dhcp_client();
-        supplicant_stop_dhcp_server();
+	sleep(1);
 
-        supplicant_leave_network();
-        supplicant_stop_station();
-        supplicant_stop_softap();
+	supplicant_stop_dhcp_client();
+	supplicant_stop_dhcp_server();
+
+	supplicant_leave_network();
+	supplicant_stop_station();
+	supplicant_stop_softap();
 }
 
 int supplicant_is_scan_mode(void)
@@ -900,15 +902,15 @@ int supplicant_activate_ntpd(void)
 	int ret;
 
 	ret = supplicant_execute_command(args_ntp_set[0], &args_ntp_set[0], envs);
-        if (ret < 0) {
-                IOT_ERROR("unable to set ntp");
-                return -1;
-        }
+	if (ret < 0) {
+		IOT_ERROR("unable to set ntp");
+		return -1;
+	}
 
 	ret = supplicant_execute_command(args_ntp_restart[0], &args_ntp_restart[0], envs);
-        if (ret < 0) {
-                IOT_ERROR("unable to restart ntp service");
-                return -1;
-        }
-        return 0;
+	if (ret < 0) {
+		IOT_ERROR("unable to restart ntp service");
+		return -1;
+	}
+	return 0;
 }
