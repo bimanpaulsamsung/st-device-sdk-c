@@ -1123,9 +1123,9 @@ int st_publish_event_raw(IOT_CTX *iot_ctx, char *event_payload)
 		json_one_event = JSON_GET_ARRAY_ITEM(json_arry, i);
 
 		/* providerData */
-		sqnum = (sqnum + 1) & MAX_SQNUM;	// Use only positive number
+		ctx->event_sequence_num = (ctx->event_sequence_num + 1) & MAX_SQNUM;
 		json_prov_data = JSON_CREATE_OBJECT();
-		JSON_ADD_NUMBER_TO_OBJECT(json_prov_data, "sequenceNumber", sqnum);
+		JSON_ADD_NUMBER_TO_OBJECT(json_prov_data, "sequenceNumber", ctx->event_sequence_num);
 
 		if (iot_get_time_in_ms(time_in_ms, sizeof(time_in_ms)) != IOT_ERROR_NONE)
 			IOT_WARN("Cannot add optional timestamp value");
