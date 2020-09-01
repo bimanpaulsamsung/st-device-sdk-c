@@ -24,6 +24,7 @@
 #include <string.h>
 #include <iot_debug.h>
 #include "os/iot_os_util.h"
+#include "iot_internal.h"
 
 struct cts_queue_data {
     int number;
@@ -55,6 +56,44 @@ void CTS_iot_os_queue_BASIC_OPERATION(void** state)
     assert_int_equal(result, IOT_OS_TRUE);
     assert_int_equal(send_data.number, receive_data.number);
     assert_string_equal(send_data.name, receive_data.name);
+
+    // Teardown
+    iot_os_queue_delete(test_queue);
+}
+
+void CTS_iot_os_queue_MAX_LENGTH(void** state)
+{
+    struct cts_queue_data send_data[IOT_QUEUE_LENGTH];
+    struct cts_queue_data receive_data;
+    iot_os_queue *test_queue = NULL;
+    int result, i;
+
+    // Given: Fill send data
+    for (i = 0; i < IOT_QUEUE_LENGTH; i++) {
+        send_data[i].number = i;
+        snprintf(send_data[i].name, sizeof(send_data[i].name), "Test String - %d", i);
+    }
+
+    // When: create queue
+    test_queue = iot_os_queue_create(IOT_QUEUE_LENGTH, sizeof(struct cts_queue_data));
+    // Then: success
+    assert_non_null(test_queue);
+
+    for (i = 0; i < IOT_QUEUE_LENGTH; i++) {
+        // When: send data
+        result = iot_os_queue_send(test_queue, &send_data[i], 0);
+        // Then: success to send
+        assert_int_equal(result, IOT_OS_TRUE);
+    }
+
+    for (i = 0; i < IOT_QUEUE_LENGTH; i++) {
+        // When: receive data
+        result = iot_os_queue_receive(test_queue, &receive_data, 0);
+        // Then: success to receive and verify data
+        assert_int_equal(result, IOT_OS_TRUE);
+        assert_int_equal(send_data[i].number, receive_data.number);
+        assert_string_equal(send_data[i].name, receive_data.name);
+    }
 
     // Teardown
     iot_os_queue_delete(test_queue);
@@ -232,6 +271,7 @@ int CTS_iot_os_queue_test()
 {
     const struct CMUnitTest CTS_iot_os_queue_api[] = {
             cmocka_unit_test(CTS_iot_os_queue_BASIC_OPERATION),
+            cmocka_unit_test(CTS_iot_os_queue_MAX_LENGTH),
     };
 
     return cmocka_run_group_tests_name("iot_os_queue", CTS_iot_os_queue_api, NULL, NULL);
