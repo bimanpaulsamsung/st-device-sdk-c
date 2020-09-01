@@ -102,6 +102,49 @@ void CTS_iot_bsp_nv_get_data_path_EXISTENCE(void** state)
     }
 }
 
+void CTS_iot_bsp_get_bsp_name_EXISTENCE(void** state)
+{
+    char *bspName = NULL;
+
+    // When
+    bspName = strdup(iot_bsp_get_bsp_name());
+    // Then
+    assert_non_null(bspName);
+    // Teardown
+    free(bspName);
+}
+
+void CTS_iot_bsp_get_bsp_name_CONSISTENCY(void** state)
+{
+    char *bspName1 = NULL;
+    char *bspName2 = NULL;
+
+    // When
+    bspName1 = strdup(iot_bsp_get_bsp_name());
+    bspName2 = strdup(iot_bsp_get_bsp_name());
+    // Then
+    assert_non_null(bspName2);
+    assert_string_equal(bspName1, bspName2);
+
+    // Teardown
+    free(bspName1);
+    free(bspName2);
+}
+
+void CTS_iot_bsp_system_get_time_in_sec_BASIC_OPERATION(void** state)
+{
+    char outTime[16];
+    iot_error_t err;
+
+    // Given: wait 1 second.
+    iot_os_delay(1000);
+    // When
+    err = iot_bsp_system_get_time_in_sec(outTime, sizeof(outTime));
+    // Then
+    assert_int_equal(err, IOT_ERROR_NONE);
+    assert_true(atoi(outTime) > 0);
+}
+
 int CTS_iot_bsp_test()
 {
     const struct CMUnitTest CTS_iot_bsp_api[] = {
@@ -109,6 +152,9 @@ int CTS_iot_bsp_test()
             cmocka_unit_test(CTS_iot_bsp_system_get_uniqueid_CONSISTENCY),
             cmocka_unit_test(CTS_iot_bsp_wifi_get_mac_CONSISTENCY),
             cmocka_unit_test(CTS_iot_bsp_nv_get_data_path_EXISTENCE),
+            cmocka_unit_test(CTS_iot_bsp_get_bsp_name_EXISTENCE),
+            cmocka_unit_test(CTS_iot_bsp_get_bsp_name_CONSISTENCY),
+            cmocka_unit_test(CTS_iot_bsp_system_get_time_in_sec_BASIC_OPERATION),
     };
 
     return cmocka_run_group_tests_name("iot_bsp", CTS_iot_bsp_api, NULL, NULL);
