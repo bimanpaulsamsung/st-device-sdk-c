@@ -75,31 +75,18 @@ void CTS_iot_bsp_system_get_uniqueid_CONSISTENCY(void **state)
     free(unique_id_2);
 }
 
-void CTS_iot_bsp_wifi_get_mac_CONSISTENCY(void** state)
+void CTS_iot_bsp_system_get_time_in_sec_BASIC_OPERATION(void** state)
 {
-    iot_error_t err_1, err_2;
-    struct iot_mac iotmac_1;
-    struct iot_mac iotmac_2;
+    char outTime[16];
+    iot_error_t err;
 
-    // Given
-    memset(&iotmac_1, '\0', sizeof(struct iot_mac));
-    memset(&iotmac_2, '\0', sizeof(struct iot_mac));
-
-    // When: get mac address twice
-    err_1 = iot_bsp_wifi_get_mac(&iotmac_1);
-    err_2 = iot_bsp_wifi_get_mac(&iotmac_2);
-
-    // Then: API should return success and two mac address should be same.
-    assert_int_equal(err_1, IOT_ERROR_NONE);
-    assert_int_equal(err_2, IOT_ERROR_NONE);
-    assert_memory_equal(&iotmac_1, &iotmac_2, sizeof(struct iot_mac));
-}
-
-void CTS_iot_bsp_nv_get_data_path_EXISTENCE(void** state)
-{
-    for (int i = IOT_NVD_WIFI_PROV_STATUS; i < IOT_NVD_MAX; i++) {
-        assert_non_null(iot_bsp_nv_get_data_path(i));
-    }
+    // Given: wait 1 second.
+    iot_os_delay(1000);
+    // When
+    err = iot_bsp_system_get_time_in_sec(outTime, sizeof(outTime));
+    // Then
+    assert_int_equal(err, IOT_ERROR_NONE);
+    assert_true(atoi(outTime) > 0);
 }
 
 void CTS_iot_bsp_get_bsp_name_EXISTENCE(void** state)
@@ -131,30 +118,65 @@ void CTS_iot_bsp_get_bsp_name_CONSISTENCY(void** state)
     free(bspName2);
 }
 
-void CTS_iot_bsp_system_get_time_in_sec_BASIC_OPERATION(void** state)
+void CTS_iot_bsp_nv_get_data_path_EXISTENCE(void** state)
 {
-    char outTime[16];
-    iot_error_t err;
+    for (int i = IOT_NVD_WIFI_PROV_STATUS; i < IOT_NVD_MAX; i++) {
+        assert_non_null(iot_bsp_nv_get_data_path(i));
+    }
+}
 
-    // Given: wait 1 second.
+void CTS_iot_bsp_nv_get_data_path_OUT_OF_RANGE(void** state)
+{
+    assert_null(iot_bsp_nv_get_data_path(IOT_NVD_UNKNOWN));
+    assert_null(iot_bsp_nv_get_data_path(IOT_NVD_MAX));
+}
+
+void CTS_iot_bsp_wifi_init_MULTIPLE_TRY(void** state)
+{
+    // Try 1st init
+    assert_int_equal(iot_bsp_wifi_init(), IOT_ERROR_NONE);
+    // 1 second delay
     iot_os_delay(1000);
-    // When
-    err = iot_bsp_system_get_time_in_sec(outTime, sizeof(outTime));
-    // Then
-    assert_int_equal(err, IOT_ERROR_NONE);
-    assert_true(atoi(outTime) > 0);
+    // Try 2nd init
+    assert_int_equal(iot_bsp_wifi_init(), IOT_ERROR_NONE);
+}
+
+void CTS_iot_bsp_wifi_get_mac_CONSISTENCY(void** state)
+{
+    iot_error_t err_1, err_2;
+    struct iot_mac iotmac_1;
+    struct iot_mac iotmac_2;
+
+    // Given
+    memset(&iotmac_1, '\0', sizeof(struct iot_mac));
+    memset(&iotmac_2, '\0', sizeof(struct iot_mac));
+
+    // When: get mac address twice
+    err_1 = iot_bsp_wifi_get_mac(&iotmac_1);
+    err_2 = iot_bsp_wifi_get_mac(&iotmac_2);
+
+    // Then: API should return success and two mac address should be same.
+    assert_int_equal(err_1, IOT_ERROR_NONE);
+    assert_int_equal(err_2, IOT_ERROR_NONE);
+    assert_memory_equal(&iotmac_1, &iotmac_2, sizeof(struct iot_mac));
 }
 
 int CTS_iot_bsp_test()
 {
     const struct CMUnitTest CTS_iot_bsp_api[] = {
+            // iot_bsp_random
             cmocka_unit_test(CTS_iot_bsp_random_RANDOMNESS),
+            // iot_bsp_system
             cmocka_unit_test(CTS_iot_bsp_system_get_uniqueid_CONSISTENCY),
-            cmocka_unit_test(CTS_iot_bsp_wifi_get_mac_CONSISTENCY),
-            cmocka_unit_test(CTS_iot_bsp_nv_get_data_path_EXISTENCE),
+            cmocka_unit_test(CTS_iot_bsp_system_get_time_in_sec_BASIC_OPERATION),
             cmocka_unit_test(CTS_iot_bsp_get_bsp_name_EXISTENCE),
             cmocka_unit_test(CTS_iot_bsp_get_bsp_name_CONSISTENCY),
-            cmocka_unit_test(CTS_iot_bsp_system_get_time_in_sec_BASIC_OPERATION),
+            // iot_bsp_nv_data
+            cmocka_unit_test(CTS_iot_bsp_nv_get_data_path_EXISTENCE),
+            cmocka_unit_test(CTS_iot_bsp_nv_get_data_path_OUT_OF_RANGE),
+            // iot_bsp_wifi
+            cmocka_unit_test(CTS_iot_bsp_wifi_init_MULTIPLE_TRY),
+            cmocka_unit_test(CTS_iot_bsp_wifi_get_mac_CONSISTENCY),
     };
 
     return cmocka_run_group_tests_name("iot_bsp", CTS_iot_bsp_api, NULL, NULL);
