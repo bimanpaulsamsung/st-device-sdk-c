@@ -244,5 +244,8 @@ mac_out:
 
 iot_wifi_freq_t iot_bsp_wifi_get_freq(void)
 {
-	return IOT_WIFI_FREQ_2_4G_ONLY;
+	if (supplicant_get_freq_support() == 0)
+		return IOT_WIFI_FREQ_2_4G_ONLY;
+
+	return IOT_WIFI_FREQ_2_4G_5G_BOTH;
 }

@@ -56,6 +56,9 @@
 					  "netbios-name-servers, netbios-scope, interface-mtu," \
 					  "rfc3442-classless-static-routes, ntp-servers;\n"
 
+#define WIFI_FREQ_SUPPORT_CMD "iw phy"
+#define WIFI_FREQ_5GHZ_STR "Band 2"
+
 static char *g_softap_iface;
 static char *g_iface;
 static char *g_network;
@@ -892,6 +895,28 @@ void supplicant_stop_dhcp_server(void)
 
 	kill(dnsmasq_pid, SIGTERM);
 	waitpid(dnsmasq_pid, NULL, 0);
+}
+
+/* Parse `iw phy` command output and check whether
+ * board supports only 2.4GHz or both 2.4GHz and 5GHz.
+ */
+int supplicant_get_freq_support(void)
+{
+	FILE *fp;
+	int max_line_len = 500;
+	char line[max_line_len];
+	char cmd[20] = { 0 };
+
+	strncpy(cmd, WIFI_FREQ_SUPPORT_CMD, sizeof(cmd) - 1);
+	fp = popen(cmd, "r");
+	while (fgets(line, max_line_len, fp)) {
+		if (strstr(line, WIFI_FREQ_5GHZ_STR) != NULL) {
+			pclose(fp);
+			return 1;
+		}
+	}
+	pclose(fp);
+	return 0;
 }
 
 int supplicant_activate_ntpd(void)
