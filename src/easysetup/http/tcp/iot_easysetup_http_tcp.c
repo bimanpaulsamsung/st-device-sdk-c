@@ -15,7 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+#ifdef STM32L475xx
 #define MBEDOS_STM32
+#endif
 
 #include <string.h>
 #if !defined(MBEDOS_STM32)
@@ -32,7 +34,6 @@
 #include "iot_debug.h"
 #include "iot_easysetup.h"
 
-
 #if defined(MBEDOS_STM32)
 #include "wifi.h"
 #define WIFI_WRITE_TIMEOUT 10000
@@ -46,7 +47,10 @@ static char *tx_buffer = NULL;
 
 static iot_os_thread es_tcp_task_handle = NULL;
 
+#if !defined(MBEDOS_STM32)
 static int listen_sock = -1;
+#endif
+
 static int accept_sock = -1;
 static int deinit_processing = 0;
 
@@ -455,13 +459,12 @@ static void es_tcp_task(void *pvParameters)
 		}
 
 		while (1) {
-
-			if (accept_sock >= 0 && !deinit_processing)
+			if (accept_sock >= 0 && !deinit_processing) {
 				if (_process_accept_socket(accept_sock) < 0)
 					break;
-			else
+			} else {
 				break;
-
+			}
 		}
 
 		IOT_INFO("close accept socket");
