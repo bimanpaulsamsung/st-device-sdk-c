@@ -222,14 +222,11 @@ unsigned char iot_os_eventgroup_wait_bits(iot_os_eventgroup* eventgroup_handle,
 
 	IOT_ERROR_CHECK(ef == NULL, IOT_OS_FALSE, "Invalid Event");
 
-	IOT_DEBUG("Any of bits to wait for: 0x%x", bits_to_wait_for);
 	ret = ef->wait_any((uint32_t)bits_to_wait_for, wait_time_ms, clear_on_exit);
 	if (ret & osFlagsError) {
-		IOT_DEBUG("Did not receive Event for bits 0x%x | Ret [0x%x]",
-				bits_to_wait_for, ret);
 		return 0;
 	}
-	IOT_DEBUG("Received ANY | Bits: 0x%x | Value: 0x%x", bits_to_wait_for, ret);
+
 	return (unsigned char)ret;
 }
 
