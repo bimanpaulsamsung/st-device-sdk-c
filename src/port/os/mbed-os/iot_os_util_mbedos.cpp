@@ -68,7 +68,7 @@ static osPriority_t get_mbed_priority(int priority)
 int iot_os_thread_create(void * thread_function, const char* name, int stack_size,
 		void* data, int priority, iot_os_thread* thread_handle)
 {
-	Thread *thread = new Thread(get_mbed_priority(priority), stack_size, nullptr, name);
+	Thread *thread = new Thread();
 	IOT_ERROR_CHECK(!thread, IOT_OS_FALSE, "Memory allocation Failed!!!");
 
 	osStatus status = thread->start(callback((callbackFN)thread_function, data));
