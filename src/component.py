@@ -66,6 +66,8 @@ elif "CONFIG_STDK_IOT_CORE_BSP_SUPPORT_CY8CPROTO_062_4343W" in vars() and CONFIG
     include_path("iot-core/src/port/bsp/cy8cproto_062_4343w/")
 elif "CONFIG_STDK_IOT_CORE_BSP_SUPPORT_RDA5981C" in vars() and CONFIG_STDK_IOT_CORE_BSP_SUPPORT_RDA5981C == 1:
     include_path("iot-core/src/port/bsp/rda5981c/")
+elif "CONFIG_STDK_IOT_CORE_BSP_SUPPORT_STM32" in vars() and CONFIG_STDK_IOT_CORE_BSP_SUPPORT_STM32 == 1:
+    include_path("iot-core/src/port/bsp/stm32/")
 else:
     include_path("iot-core/src/port/bsp/posix/")
 

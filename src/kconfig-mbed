@@ -119,7 +119,15 @@ config STDK_IOT_CORE_LOG_FILE_RAM_BUF_SIZE
        Configuration ram buffer size that is releasted to amount logs to save at a time.
 
 choice CONFIG_STDK_IOT_CORE_BSP_SUPPORT_CY8CPROTO_062_4343W
-    bool "Mbed OS BSP Support"
+    bool "Mbed OS Cypress BSP Support"
+    default y
+    depends on STDK_IOT_CORE
+    help
+       Choose the bsp support layer
+endchoice
+
+choice CONFIG_STDK_IOT_CORE_BSP_SUPPORT_STM32
+    bool "Mbed OS STM32 BSP Support"
     default y
     depends on STDK_IOT_CORE
     help
