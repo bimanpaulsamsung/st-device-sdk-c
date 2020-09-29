@@ -50,7 +50,6 @@ static int at_read_select(iot_net_interface_t *net)
 		return 0;
 	}
 
-	IOT_INFO("Socket Buffer: [%02x]", readbuf[0]);
 	cache = ret;
 	return 1;
 }
@@ -72,14 +71,13 @@ static int at_cache_read(uint8_t socket, uint8_t *buf, uint16_t len, uint16_t *R
 		cache = 0;
 	}
 
-	//Normal read with len = len - cache
+	//Normal read with len = len - cache;
 	if ((len - recvLen) == 0) {
 		*RcvDatalen = recvLen;
 		return (recvLen? 0: -1);
 	}
 
 	wifi_code = WIFI_ReceiveData(socket, buf+recvLen, len-recvLen, &ret, Timeout);
-
 	if (wifi_code == WIFI_STATUS_OK) {
 		recvLen += ret;
 	} else {
@@ -94,7 +92,6 @@ static int at_cache_read(uint8_t socket, uint8_t *buf, uint16_t len, uint16_t *R
 
 static iot_error_t _iot_net_check_interface(iot_net_interface_t *net)
 {
-//	IOT_WARN("FLOW");
 	if (net == NULL) {
 		IOT_ERROR("interface is null");
 		return IOT_ERROR_NET_INVALID_INTERFACE;
@@ -131,7 +128,6 @@ static int _iot_net_select(iot_net_interface_t *net, unsigned int timeout_ms)
 
 static void _iot_net_cleanup_platform_context(iot_net_interface_t *net)
 {
-	IOT_WARN("FLOW");
 	if (_iot_net_check_interface(net)) {
 		return;
 	}
@@ -192,6 +188,7 @@ exit:
 static void _iot_net_tls_disconnect(iot_net_interface_t *net)
 {
 	int ret;
+
 	ret = WIFI_CloseClientConnection(net->context.fd);
 	if (ret != WIFI_STATUS_OK) {
 		IOT_ERROR("SSL DisConnection failed");
@@ -223,7 +220,6 @@ static int _iot_net_tls_read(iot_net_interface_t *net,
 
 	do {
 		wifi_code = at_cache_read(net->context.fd, buf+recvLen, len-recvLen, &ret, WIFI_READ_TIMEOUT);
-
 		if (wifi_code == WIFI_STATUS_OK) {
 			recvLen += ret;
 		} else {
@@ -250,7 +246,6 @@ static int _iot_net_tls_write(iot_net_interface_t *net,
 
 	do {
 		wifi_code = WIFI_SendData(net->context.fd, buf + sentLen, (size_t)len - sentLen, &ret, WIFI_WRITE_TIMEOUT);
-
 		if (wifi_code == WIFI_STATUS_OK) {
 			sentLen += ret;
 		} else {
