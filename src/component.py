@@ -78,6 +78,8 @@ if "CONFIG_STDK_IOT_CORE_OS_SUPPORT_MBEDOS" in vars():
 # TLS
 if "CONFIG_STDK_IOT_CORE_NET_MBEDTLS" in vars() and CONFIG_STDK_IOT_CORE_NET_MBEDTLS == 1:
     include_path("iot-core/src/port/net/mbedtls/")
+elif "CONFIG_STDK_IOT_CORE_NET_ISM43362" in vars() and CONFIG_STDK_IOT_CORE_NET_ISM43362 == 1:
+    include_path("iot-core/src/port/net/ism43362/")
 else:
     include_path("iot-core/src/port/net/openssl/")
 
