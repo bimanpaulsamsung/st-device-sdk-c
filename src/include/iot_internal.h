@@ -31,7 +31,6 @@
 #define IOT_TASK_PRIORITY (4)
 #endif
 #define IOT_QUEUE_LENGTH (10)
-#define IOT_PUB_QUEUE_LENGTH (10)
 
 #define IOT_TOPIC_SIZE (100)
 #define IOT_PAYLOAD_SIZE (1024)
