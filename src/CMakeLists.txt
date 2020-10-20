@@ -57,7 +57,6 @@ add_custom_command(
         COMMAND sh -c \"sed -i.bak 's/unsigned/const unsigned/g' ${ROOT_CA_SOURCE}\"
         COMMAND sh -c \"rm -f ${ROOT_CA_SOURCE}.bak\"
         COMMAND sh -c \"rm -f ${ROOT_CA_FILE}\"
-        BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/${ROOT_CA_SOURCE}
 )
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -include ${CMAKE_CURRENT_LIST_DIR}/include/iot_common.h")
@@ -70,7 +69,6 @@ add_library(iotcore
         iot_nv_data.c
         iot_util.c
         iot_uuid.c
-        ${ROOT_CA_SOURCE}
         iot_root_ca.c
         iot_log_file.c
         iot_dump_log.c
