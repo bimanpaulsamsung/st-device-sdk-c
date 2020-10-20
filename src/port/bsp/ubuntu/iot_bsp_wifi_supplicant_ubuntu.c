@@ -56,6 +56,11 @@
 					  "netbios-name-servers, netbios-scope, interface-mtu," \
 					  "rfc3442-classless-static-routes, ntp-servers;\n"
 
+#define WIFI_KEY_MGMT_NONE "none"
+#define WIFI_KEY_MGMT_WEP "wep"
+#define WIFI_KEY_MGMT_PSK "psk"
+#define WIFI_KEY_MGMT_EAP "eap"
+
 #define WIFI_FREQ_SUPPORT_CMD "iw phy"
 #define WIFI_FREQ_5GHZ_STR "Band 2"
 
@@ -310,6 +315,11 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 	GVariant *reply;
 	GVariant *prop;
 	GVariantIter *iter;
+	char *key;
+	GVariant *value;
+	char *alg;
+	GVariantIter *key_algo;
+	iot_wifi_auth_mode_t auth;
 	int16_t signal;
 	uint8_t byt;
 	int ret;
@@ -332,6 +342,7 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 	for (i = 0; g_variant_iter_loop(iter, "y", &byt) && i < IOT_WIFI_MAX_BSSID_LEN; i++) {
 		ap_record->bssid[i] = byt;
 	}
+
 	g_variant_iter_free(iter);
 	g_variant_unref(prop);
 	g_variant_unref(reply);
@@ -354,12 +365,82 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 		ap_record->ssid[i] = byt;
 	}
 	ap_record->ssid[i] = '\0';
+
 	g_variant_iter_free(iter);
 	g_variant_unref(prop);
 	g_variant_unref(reply);
 
-	/* TODO: Set appropriate key management method value */
-	ap_record->authmode = IOT_WIFI_AUTH_WPA_WPA2_PSK;
+	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
+                                          bss_path,
+                                          SUPPLICANT_PROP_INTERFACE,
+                                          "Get",
+                                          g_variant_new("(ss)", SUPPLICANT_INTERFACE".BSS",
+                                          "WPA"),
+                                          &reply);
+	if (ret) {
+		IOT_ERROR("error while getting WPA property of BSS %d", ret);
+		return -1;
+	}
+
+	auth = IOT_WIFI_AUTH_OPEN;
+	if (reply != NULL) {
+		g_variant_get(reply, "(v)", &prop);
+		g_variant_get(prop, "a{sv}", &iter);
+		while (g_variant_iter_loop(iter, "{sv}", &key, &value)) {
+			if (strcmp(key, "KeyMgmt") == 0) {
+				g_variant_get(value, "as", &key_algo);
+				while (g_variant_iter_loop(key_algo, "s", &alg)) {
+					if (strstr(alg, WIFI_KEY_MGMT_PSK))
+						auth = IOT_WIFI_AUTH_WPA_PSK;
+				}
+			} else if (strcmp(key, "Group") == 0) {
+				g_variant_get(value, "s", &alg);
+				if (strstr(alg, WIFI_KEY_MGMT_WEP))
+					auth = IOT_WIFI_AUTH_WEP;
+			}
+		}
+
+		g_variant_iter_free(iter);
+		g_variant_unref(prop);
+		g_variant_unref(reply);
+	}
+
+	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
+                                          bss_path,
+                                          SUPPLICANT_PROP_INTERFACE,
+                                          "Get",
+                                          g_variant_new("(ss)", SUPPLICANT_INTERFACE".BSS",
+                                          "RSN"),
+                                          &reply);
+	if (ret) {
+		IOT_ERROR("error while getting RSN property of BSS %d", ret);
+		return -1;
+	}
+
+	if (reply != NULL ) {
+		g_variant_get(reply, "(v)", &prop);
+		g_variant_get(prop, "a{sv}", &iter);
+		while (g_variant_iter_loop(iter, "{sv}", &key, &value)) {
+			if (strcmp(key, "KeyMgmt") == 0) {
+				g_variant_get(value, "as", &key_algo);
+				while (g_variant_iter_loop(key_algo, "s", &alg)) {
+					if (strstr(alg, WIFI_KEY_MGMT_PSK)) {
+						if (auth == IOT_WIFI_AUTH_WPA_PSK)
+							auth = IOT_WIFI_AUTH_WPA_WPA2_PSK;
+						else
+							auth = IOT_WIFI_AUTH_WPA2_PSK;
+					} else if (strstr(alg, WIFI_KEY_MGMT_EAP)) {
+						auth = IOT_WIFI_AUTH_WPA2_ENTERPRISE;
+					}
+				}
+			}
+		}
+
+		g_variant_iter_free(iter);
+		g_variant_unref(prop);
+		g_variant_unref(reply);
+	}
+	ap_record->authmode = auth;
 
 	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
                                           bss_path,
@@ -375,6 +456,7 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 
 	g_variant_get(reply, "(v)", &prop);
 	g_variant_get(prop, "q", &(ap_record->freq));
+
 	g_variant_unref(prop);
 	g_variant_unref(reply);
 
