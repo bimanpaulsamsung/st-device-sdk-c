@@ -60,5 +60,7 @@ struct wpa_ssid
 	int supplicant_start_dhcp_server(void);
 	void supplicant_stop_dhcp_server(void);
 
+	int supplicant_get_freq_support(void);
+
 	int supplicant_activate_ntpd(void);
 #endif

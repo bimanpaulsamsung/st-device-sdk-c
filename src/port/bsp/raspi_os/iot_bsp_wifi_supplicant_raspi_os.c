@@ -56,6 +56,14 @@
 					  "netbios-name-servers, netbios-scope, interface-mtu," \
 					  "rfc3442-classless-static-routes, ntp-servers;\n"
 
+#define WIFI_KEY_MGMT_NONE "none"
+#define WIFI_KEY_MGMT_WEP "wep"
+#define WIFI_KEY_MGMT_PSK "psk"
+#define WIFI_KEY_MGMT_EAP "eap"
+
+#define WIFI_FREQ_SUPPORT_CMD "iw phy"
+#define WIFI_FREQ_5GHZ_STR "Band 2"
+
 static char *g_softap_iface;
 static char *g_iface;
 static char *g_network;
@@ -69,6 +77,7 @@ static int supplicant_gdbus_method_call_sync(char *service,
                                              GVariant **reply)
 {
 	g_autoptr(GError) error = NULL;
+
 	if (!g_connection)
 		return -EINVAL;
 
@@ -85,7 +94,11 @@ static int supplicant_gdbus_method_call_sync(char *service,
                                         &error);
 	if (error) {
 		IOT_ERROR("Error while sending dbus method call %s", error->message);
-		return error->code;
+
+		int ret;
+		ret = error->code;
+		g_clear_error(&error);
+		return ret;
 	}
 	return 0;
 }
@@ -111,6 +124,7 @@ int supplicant_get_wireless_interface(char **ctrl_ifname)
 static int supplicant_get_interface(char *ctrl_ifname, char **iface)
 {
 	int ret;
+	char *temp;
 	GVariant *reply;
 
 	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
@@ -123,8 +137,11 @@ static int supplicant_get_interface(char *ctrl_ifname, char **iface)
 		IOT_ERROR("error while sending get interface method call %d", ret);
 		return ret;
 	}
-	g_variant_get(reply, "(&o)", iface);
+	g_variant_get(reply, "(&o)", &temp);
+	*iface = g_strdup(temp);
 	IOT_DEBUG("WPA supplicant active interface:%s", *iface);
+
+	g_variant_unref(reply);
 	return 0;
 }
 
@@ -149,6 +166,7 @@ static int supplicant_remove_interface(char *iface)
 static int supplicant_create_interface(char *ctrl_ifname, char **iface)
 {
 	int ret;
+	char *temp;
 	GVariant *reply;
 	GVariant *parameter;
 	GVariantBuilder *builder;
@@ -169,8 +187,11 @@ static int supplicant_create_interface(char *ctrl_ifname, char **iface)
 		return -1;
 	}
 
-	g_variant_get(reply, "(&o)", iface);
+	g_variant_get(reply, "(&o)", &temp);
+	*iface = g_strdup(temp);
 	IOT_DEBUG("WPA supplicant new interface:%s", *iface);
+
+	g_variant_unref(reply);
 	return 0;
 }
 
@@ -212,6 +233,9 @@ static int supplicant_get_apscan_mode(char *iface, int *mode)
 	}
 	g_variant_get(reply, "(v)", &iter);
 	g_variant_get(iter, "u", mode);
+
+	g_variant_unref(iter);
+	g_variant_unref(reply);
 	return 0;
 }
 
@@ -242,6 +266,7 @@ static int supplicant_configure_interface(char **iface, int mode)
 		ret = supplicant_set_interface(temp_iface, mode);
 		if (ret) {
 			IOT_ERROR("unable to send set interface method call: %d", ret);
+			g_free(temp_iface);
 			return -1;
 		}
 
@@ -257,6 +282,7 @@ static int supplicant_configure_interface(char **iface, int mode)
 	}
 
 	ret = supplicant_remove_interface(temp_iface);
+	g_free(temp_iface);
 	if (ret) {
 		IOT_ERROR("unable to send remove interface method call: %d", ret);
 		return -1;
@@ -276,6 +302,7 @@ static int supplicant_configure_interface(char **iface, int mode)
 	ret = supplicant_set_interface(temp_iface, mode);
 	if (ret) {
 		IOT_ERROR("unable to send set interface method call: %d", ret);
+		g_free(temp_iface);
 		return -1;
 	}
 
@@ -288,6 +315,11 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 	GVariant *reply;
 	GVariant *prop;
 	GVariantIter *iter;
+	char *key;
+	GVariant *value;
+	char *alg;
+	GVariantIter *key_algo;
+	iot_wifi_auth_mode_t auth;
 	int16_t signal;
 	uint8_t byt;
 	int ret;
@@ -311,6 +343,10 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 		ap_record->bssid[i] = byt;
 	}
 
+	g_variant_iter_free(iter);
+	g_variant_unref(prop);
+	g_variant_unref(reply);
+
 	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
                                           bss_path,
                                           SUPPLICANT_PROP_INTERFACE,
@@ -330,8 +366,81 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 	}
 	ap_record->ssid[i] = '\0';
 
-	/* TODO: Set appropriate key management method value */
-	ap_record->authmode = IOT_WIFI_AUTH_WPA_WPA2_PSK;
+	g_variant_iter_free(iter);
+	g_variant_unref(prop);
+	g_variant_unref(reply);
+
+	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
+                                          bss_path,
+                                          SUPPLICANT_PROP_INTERFACE,
+                                          "Get",
+                                          g_variant_new("(ss)", SUPPLICANT_INTERFACE".BSS",
+                                          "WPA"),
+                                          &reply);
+	if (ret) {
+		IOT_ERROR("error while getting WPA property of BSS %d", ret);
+		return -1;
+	}
+
+	auth = IOT_WIFI_AUTH_OPEN;
+	if (reply != NULL) {
+		g_variant_get(reply, "(v)", &prop);
+		g_variant_get(prop, "a{sv}", &iter);
+		while (g_variant_iter_loop(iter, "{sv}", &key, &value)) {
+			if (strcmp(key, "KeyMgmt") == 0) {
+				g_variant_get(value, "as", &key_algo);
+				while (g_variant_iter_loop(key_algo, "s", &alg)) {
+					if (strstr(alg, WIFI_KEY_MGMT_PSK))
+						auth = IOT_WIFI_AUTH_WPA_PSK;
+				}
+			} else if (strcmp(key, "Group") == 0) {
+				g_variant_get(value, "s", &alg);
+				if (strstr(alg, WIFI_KEY_MGMT_WEP))
+					auth = IOT_WIFI_AUTH_WEP;
+			}
+		}
+
+		g_variant_iter_free(iter);
+		g_variant_unref(prop);
+		g_variant_unref(reply);
+	}
+
+	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
+                                          bss_path,
+                                          SUPPLICANT_PROP_INTERFACE,
+                                          "Get",
+                                          g_variant_new("(ss)", SUPPLICANT_INTERFACE".BSS",
+                                          "RSN"),
+                                          &reply);
+	if (ret) {
+		IOT_ERROR("error while getting RSN property of BSS %d", ret);
+		return -1;
+	}
+
+	if (reply != NULL ) {
+		g_variant_get(reply, "(v)", &prop);
+		g_variant_get(prop, "a{sv}", &iter);
+		while (g_variant_iter_loop(iter, "{sv}", &key, &value)) {
+			if (strcmp(key, "KeyMgmt") == 0) {
+				g_variant_get(value, "as", &key_algo);
+				while (g_variant_iter_loop(key_algo, "s", &alg)) {
+					if (strstr(alg, WIFI_KEY_MGMT_PSK)) {
+						if (auth == IOT_WIFI_AUTH_WPA_PSK)
+							auth = IOT_WIFI_AUTH_WPA_WPA2_PSK;
+						else
+							auth = IOT_WIFI_AUTH_WPA2_PSK;
+					} else if (strstr(alg, WIFI_KEY_MGMT_EAP)) {
+						auth = IOT_WIFI_AUTH_WPA2_ENTERPRISE;
+					}
+				}
+			}
+		}
+
+		g_variant_iter_free(iter);
+		g_variant_unref(prop);
+		g_variant_unref(reply);
+	}
+	ap_record->authmode = auth;
 
 	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
                                           bss_path,
@@ -348,6 +457,9 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 	g_variant_get(reply, "(v)", &prop);
 	g_variant_get(prop, "q", &(ap_record->freq));
 
+	g_variant_unref(prop);
+	g_variant_unref(reply);
+
 	ret = supplicant_gdbus_method_call_sync(SUPPLICANT_SERVICE,
                                           bss_path,
                                           SUPPLICANT_PROP_INTERFACE,
@@ -363,6 +475,9 @@ static int supplicant_get_scanned_ap_record(char *bss_path, iot_wifi_scan_result
 	g_variant_get(reply, "(v)", &prop);
 	g_variant_get(prop, "n", &signal);
 	ap_record->rssi = (int8_t) signal;
+
+	g_variant_unref(prop);
+	g_variant_unref(reply);
 	return 0;
 }
 
@@ -376,10 +491,10 @@ static int supplicant_variant_builder(struct wpa_ssid *ssid, GVariant **paramete
 		return -EINVAL;
 	}
 
-	g_variant_builder_add(builder, "{sv}", "ssid", g_variant_new_string(strdup(ssid->ssid)));
+	g_variant_builder_add(builder, "{sv}", "ssid", g_variant_new_string(ssid->ssid));
 	g_variant_builder_add(builder, "{sv}", "mode", g_variant_new("u", ssid->mode));
 	g_variant_builder_add(builder, "{sv}", "key_mgmt", g_variant_new_string(ssid->key_mgmt));
-	g_variant_builder_add(builder, "{sv}", "psk", g_variant_new_string(strdup(ssid->pswd)));
+	g_variant_builder_add(builder, "{sv}", "psk", g_variant_new_string(ssid->pswd));
 
 	*parameter = g_variant_builder_end(builder);
 	g_variant_builder_unref(builder);
@@ -390,6 +505,7 @@ static int supplicant_add_network(char *iface, struct wpa_ssid *ssid)
 {
 	GVariant *reply;
 	GVariant *parameter;
+	char *temp;
 	int ret;
 
 	supplicant_variant_builder(ssid, &parameter);
@@ -408,8 +524,11 @@ static int supplicant_add_network(char *iface, struct wpa_ssid *ssid)
 	/* TODO: Replace sleep with other alternatives */
 	sleep(2);
 
-	g_variant_get(reply, "(&o)", &g_network);
+	g_variant_get(reply, "(&o)", &temp);
+	g_network = g_strdup(temp);
 	IOT_DEBUG("added new network %s", g_network);
+
+	g_variant_unref(reply);
 	return 0;
 }
 
@@ -640,6 +759,9 @@ uint16_t supplicant_get_scanned_ap_list(iot_wifi_scan_result_t *ap_list)
 			i--;
 		}
 	}
+	g_variant_iter_free(iter);
+	g_variant_unref(temp);
+	g_variant_unref(reply);
 	return i;
 }
 
@@ -650,6 +772,7 @@ int supplicant_start_station(void)
 		g_connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
 		if (error) {
 			IOT_ERROR("failed to get gdbus connection %s", error->message);
+			g_clear_error(&error);
 			return -1;
 		}
 	}
@@ -658,6 +781,8 @@ int supplicant_start_station(void)
 	if (supplicant_stop_softap() == -1)
 		return -1;
 
+	g_free(g_iface);
+	g_iface = NULL;
 	if (supplicant_configure_interface(&g_iface, 1) == -1) {
 		IOT_ERROR("failed to configure network while starting station mode");
 		return -1;
@@ -678,19 +803,20 @@ int supplicant_stop_station(void)
 		return -1;
 	}
 
+	g_free(g_iface);
 	g_iface = NULL;
 	return 0;
 }
 
 int supplicant_join_network(char *ssid_key, char *password)
 {
-	struct wpa_ssid *ssid = (struct wpa_ssid *)malloc(sizeof(struct wpa_ssid));
-	snprintf(ssid->ssid, IOT_WIFI_MAX_SSID_LEN, "%s", ssid_key);
-	snprintf(ssid->pswd, IOT_WIFI_MAX_PASS_LEN, "%s", password);
-	ssid->mode = WPAS_MODE_INFRA;
-	ssid->key_mgmt = "WPA-PSK";
+	struct wpa_ssid ssid;
+	snprintf(ssid.ssid, IOT_WIFI_MAX_SSID_LEN, "%s", ssid_key);
+	snprintf(ssid.pswd, IOT_WIFI_MAX_PASS_LEN, "%s", password);
+	ssid.mode = WPAS_MODE_INFRA;
+	ssid.key_mgmt = "WPA-PSK";
 
-	if (supplicant_add_network(g_iface, ssid) == -1) {
+	if (supplicant_add_network(g_iface, &ssid) == -1) {
 		IOT_ERROR("failed to add network while joining AP");
 		return -1;
 	}
@@ -717,19 +843,21 @@ int supplicant_leave_network(void)
 		return -1;
 	}
 
+	g_free(g_network);
 	g_network = NULL;
 	return 0;
 }
 
 int supplicant_start_softap(char *ssid_name, char *pswd)
 {
-	struct wpa_ssid *ssid = (struct wpa_ssid *)malloc(sizeof(struct wpa_ssid));
+	struct wpa_ssid ssid;
 
 	if (!g_connection) {
 		g_autoptr(GError) error = NULL;
 		g_connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
 		if (error) {
 			IOT_ERROR("failed to get gdbus connection %s", error->message);
+			g_clear_error(&error);
 			return -1;
 		}
 	}
@@ -738,17 +866,19 @@ int supplicant_start_softap(char *ssid_name, char *pswd)
 	if (supplicant_leave_network() == -1)
 		return -1;
 
+	g_free(g_softap_iface);
+	g_softap_iface = NULL;
 	if (supplicant_configure_interface(&g_softap_iface, 2) == -1) {
 		IOT_ERROR("failed to configure network while starting softAP mode");
 		return -1;
 	}
 
-	snprintf(ssid->ssid, IOT_WIFI_MAX_SSID_LEN, "%s", ssid_name);
-	snprintf(ssid->pswd, IOT_WIFI_MAX_PASS_LEN, "%s", pswd);
-	ssid->mode = WPAS_MODE_AP;
-	ssid->key_mgmt = "WPA-PSK";
+	snprintf(ssid.ssid, IOT_WIFI_MAX_SSID_LEN, "%s", ssid_name);
+	snprintf(ssid.pswd, IOT_WIFI_MAX_PASS_LEN, "%s", pswd);
+	ssid.mode = WPAS_MODE_AP;
+	ssid.key_mgmt = "WPA-PSK";
 
-	if (supplicant_add_network(g_softap_iface, ssid) == -1) {
+	if (supplicant_add_network(g_softap_iface, &ssid) == -1) {
 		IOT_ERROR("failed to add network in SoftAP mode");
 		return -1;
 	}
@@ -778,6 +908,7 @@ int supplicant_stop_softap(void)
 		return -1;
 	}
 
+	g_free(g_network);
 	g_network = NULL;
 	return 0;
 }
@@ -892,6 +1023,28 @@ void supplicant_stop_dhcp_server(void)
 
 	kill(dnsmasq_pid, SIGTERM);
 	waitpid(dnsmasq_pid, NULL, 0);
+}
+
+/* Parse `iw phy` command output and check whether
+ * board supports only 2.4GHz or both 2.4GHz and 5GHz.
+ */
+int supplicant_get_freq_support(void)
+{
+	FILE *fp;
+	int max_line_len = 500;
+	char line[max_line_len];
+	char cmd[20] = { 0 };
+
+	strncpy(cmd, WIFI_FREQ_SUPPORT_CMD, sizeof(cmd) - 1);
+	fp = popen(cmd, "r");
+	while (fgets(line, max_line_len, fp)) {
+		if (strstr(line, WIFI_FREQ_5GHZ_STR) != NULL) {
+			pclose(fp);
+			return 1;
+		}
+	}
+	pclose(fp);
+	return 0;
 }
 
 int supplicant_activate_ntpd(void)
