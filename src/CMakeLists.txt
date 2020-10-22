@@ -20,6 +20,15 @@ if (NOT MBEDTLS_H)
     set(STDK_INCLUDE_PATH "${STDK_INCLUDE_PATH}" ${MBEDTLS_DIR}/mbedtls/include)
 endif (NOT MBEDTLS_H)
 
+set(LIBSODIUM_DIR deps/libsodium)
+check_include_file(${LIBSODIUM_DIR}/libsodium/src/libsodium/include/sodium.h LIBSODIUM_H)
+if (NOT LIBSODIUM_H)
+    message(STATUS "submodule init for libsodium")
+    execute_process(COMMAND git submodule update --init ${LIBSODIUM_DIR}
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(STDK_INCLUDE_PATH "${STDK_INCLUDE_PATH}" ${LIBSODIUM_DIR}/libsodium/src/libsodium/include/)
+endif (NOT LIBSODIUM_H)
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fpic")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
 set(ENABLE_CJSON_TEST OFF CACHE BOOL "Enable building cJSON test" FORCE)
