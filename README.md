@@ -55,8 +55,6 @@ This core device library should be built according to the chipset development en
 
 But, unlike the resource limited MCU devices, you can NOT check the onboarding process in the POSIX environment because it does not support a SoftAP function by default. Therefore, as a starting point of this SDK, we strongly recommend that you build one of the MCU device examples provided in the [Reference repository](https://github.com/SmartThingsCommunity/st-device-sdk-c-ref) to use all features without limitations.
 
-For instructions to set up and build SmartThings Device SDK on Raspberry Pi, please refer [Setup on RPi](doc/rpi_setup.md)
-
 ### Prerequisites
 
 Basically, you can build this core device library through `make` in the Ubuntu.
