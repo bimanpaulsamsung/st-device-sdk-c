@@ -8,10 +8,12 @@ else ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_SUPPORT_RASPI_OS, $(CFLAGS_CON
 BSP_DIR = src/port/bsp/raspi_os
 else
 include stdkconfig
+STDK_CFLAGS := $(foreach STDK_CONFIG, $(STDK_CONFIGS), -DCONFIG_$(STDK_CONFIG))
+
 BSP_DIR = src/port/bsp/posix
 endif
 OS_DIR = src/port/os/posix
-ifneq ($(findstring CONFIG_STDK_IOT_CORE_NET_MBEDTLS, $(CFLAGS_CONFIG)),)
+ifneq ($(findstring STDK_IOT_CORE_NET_MBEDTLS, $(STDK_CONFIGS)),)
 NET_DIR = src/port/net/mbedtls
 else
 NET_DIR = src/port/net/openssl
@@ -33,6 +35,7 @@ endif
 ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_SUPPORT_RASPI_OS, $(CFLAGS_CONFIG)),)
 CFLAGS	+= $(shell pkg-config --cflags gio-2.0 glib-2.0)
 endif
+CFLAGS	+= $(STDK_CFLAGS)
 
 INCS	:= -I/usr/include -Isrc/include -Isrc/include/mqtt -Isrc/include/os -Isrc/include/bsp -Isrc/include/external -I$(NET_DIR)
 INCS	+= -Isrc/include/security
@@ -49,18 +52,22 @@ ifneq ($(findstring CONFIG_STDK_IOT_CORE_EASYSETUP_HTTP, $(CFLAGS_CONFIG)),)
 SRCS	+= $(wildcard $(EASYSETUP_DIR)/http/*.c)
 endif
 ifneq ($(findstring CONFIG_STDK_IOT_CORE_EASYSETUP_X509, $(CFLAGS_CONFIG)),)
+ifneq ($(findstring STDK_IOT_CORE_EASYSETUP_HTTP, $(STDK_CONFIGS)),)
+SRCS	+= $(wildcard $(EASYSETUP_DIR)/http/*.c)
+endif
+ifneq ($(findstring STDK_IOT_CORE_EASYSETUP_X509, $(STDK_CONFIGS)),)
 SRCS	+= $(wildcard $(EASYSETUP_DIR)/http/tls/*.c)
-else
+else ifneq ($(findstring STDK_IOT_CORE_EASYSETUP_HTTP_USE_SOCKET_API, $(STDK_CONFIGS)),)
 SRCS	+= $(wildcard $(EASYSETUP_DIR)/http/tcp/*.c)
 endif
 SRCS	+= $(wildcard $(MQTT_DIR)/client/*.c)
 SRCS	+= $(wildcard $(MQTT_DIR)/packet/*.c)
 SRCS	+= $(wildcard $(SECURITY_DIR)/*.c)
-ifneq ($(findstring, "CONFIG_STDK_IOT_CORE_SECURITY_BACKEND_SOFTWARE", $(CFLAGS_CONFIG)), '')
+ifneq ($(findstring STDK_IOT_CORE_SECURITY_BACKEND_SOFTWARE, $(STDK_CONFIGS)),)
 SRCS	+= $(wildcard $(SECURITY_DIR)/backend/software/*.c)
 endif
 SRCS	+= $(wildcard $(SECURITY_DIR)/helper/libsodium/*.c)
-ifneq ($(findstring, "CONFIG_STDK_IOT_CORE_USE_MBEDTLS", $(CFLAGS_CONFIG)), '')
+ifneq ($(findstring STDK_IOT_CORE_USE_MBEDTLS, $(STDK_CONFIGS)),)
 SRCS	+= $(wildcard $(SECURITY_DIR)/helper/mbedtls/*.c)
 endif
 
