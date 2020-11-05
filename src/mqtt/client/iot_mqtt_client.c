@@ -515,6 +515,10 @@ static void _iot_mqtt_process_post_read(MQTTClient *client, iot_mqtt_packet_chun
 	switch (chunk->packet_type) {
 		case CONNACK:
 		case PUBACK:
+		case SUBACK:
+		case UNSUBACK:
+		case PUBCOMP:
+		case PINGRESP:
 #ifdef CONFIG_STDK_IOT_CORE_PROFILE_COMMAND
 			if (chunk->packet_type == PUBACK) {
 				IOT_TIMERECORD_END("NET_EST", 0);
@@ -523,10 +527,6 @@ static void _iot_mqtt_process_post_read(MQTTClient *client, iot_mqtt_packet_chun
 				iot_util_timerecord_print("NET_EST");
 			}
 #endif
-		case SUBACK:
-		case UNSUBACK:
-		case PUBCOMP:
-		case PINGRESP:
 			_iot_mqtt_process_received_ack(client, chunk);
 			break;
 		case PUBLISH:
