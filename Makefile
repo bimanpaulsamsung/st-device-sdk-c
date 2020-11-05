@@ -2,9 +2,13 @@ TOPDIR	:= $(CURDIR)
 
 include $(TOPDIR)/make/common.mk
 
-ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_SUPPORT_UBUNTU, $(CFLAGS_CONFIG)),)
+ifneq ($(findstring STDK_IOT_CORE_BSP_SUPPORT_UBUNTU, $(STDK_CONFIGS)),)
+STDK_CFLAGS := $(STDK_CONFIGS)
+
 BSP_DIR = src/port/bsp/ubuntu
-else ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_SUPPORT_RASPI_OS, $(CFLAGS_CONFIG)),)
+else ifneq ($(findstring STDK_IOT_CORE_BSP_SUPPORT_RASPI_OS, $(STDK_CONFIGS)),)
+STDK_CFLAGS := $(STDK_CONFIGS)
+
 BSP_DIR = src/port/bsp/raspi_os
 else
 include stdkconfig
@@ -27,12 +31,11 @@ OUTPUT_DIR = $(TOPDIR)/output
 CBOR_DIR = src/deps/cbor/tinycbor/src
 
 CFLAGS	:= -std=c99 -D_GNU_SOURCE
-CFLAGS	+= $(CFLAGS_CONFIG)
-ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_SUPPORT_UBUNTU, $(CFLAGS_CONFIG)),)
+ifneq ($(findstring STDK_IOT_CORE_BSP_SUPPORT_UBUNTU, $(STDK_CONFIGS)),)
 CFLAGS	+= $(shell pkg-config --cflags gio-2.0 glib-2.0)
 endif
 
-ifneq ($(findstring CONFIG_STDK_IOT_CORE_BSP_SUPPORT_RASPI_OS, $(CFLAGS_CONFIG)),)
+ifneq ($(findstring STDK_IOT_CORE_BSP_SUPPORT_RASPI_OS, $(STDK_CONFIGS)),)
 CFLAGS	+= $(shell pkg-config --cflags gio-2.0 glib-2.0)
 endif
 CFLAGS	+= $(STDK_CFLAGS)
@@ -48,10 +51,6 @@ SRCS	+= $(wildcard $(OS_DIR)/*.c)
 SRCS	+= $(wildcard $(NET_DIR)/*.c)
 SRCS	+= $(wildcard $(CRYPTO_DIR)/*.c)
 SRCS	+= $(EASYSETUP_DIR)/iot_easysetup_st_mqtt.c
-ifneq ($(findstring CONFIG_STDK_IOT_CORE_EASYSETUP_HTTP, $(CFLAGS_CONFIG)),)
-SRCS	+= $(wildcard $(EASYSETUP_DIR)/http/*.c)
-endif
-ifneq ($(findstring CONFIG_STDK_IOT_CORE_EASYSETUP_X509, $(CFLAGS_CONFIG)),)
 ifneq ($(findstring STDK_IOT_CORE_EASYSETUP_HTTP, $(STDK_CONFIGS)),)
 SRCS	+= $(wildcard $(EASYSETUP_DIR)/http/*.c)
 endif
