@@ -39,6 +39,11 @@
             "help": "ssl-dtls-max-buffering",
             "macro_name": "MBEDTLS_SSL_DTLS_MAX_BUFFERING",
             "value": 8192
+        },
+	"socket-easysetup-http": {
+            "help": "Use socket for easysetup http",
+            "macro_name": "CONFIG_STDK_IOT_CORE_EASYSETUP_HTTP_USE_SOCKET_API",
+            "value": true
         }
     },
     "macros": [
