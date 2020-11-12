@@ -41,6 +41,11 @@ iot_error_t iot_bsp_fs_open(const char* filename, iot_bsp_fs_open_mode_t mode, i
 	int fd;
 	int open_mode;
 
+	if (mode == FS_READONLY && access(filename, F_OK) == -1) {
+		IOT_DEBUG("file does not exist");
+		return IOT_ERROR_FS_NO_FILE;
+	}
+
 	if (mode == FS_READONLY) {
 		open_mode = O_RDONLY;
 	} else {
@@ -60,7 +65,14 @@ iot_error_t iot_bsp_fs_open(const char* filename, iot_bsp_fs_open_mode_t mode, i
 
 iot_error_t iot_bsp_fs_open_from_stnv(const char* filename, iot_bsp_fs_handle_t* handle)
 {
-	int fd = open(filename, O_RDONLY);
+	int fd;
+
+	if (access(filename, F_OK) == -1) {
+		IOT_DEBUG("file does not exist");
+		return IOT_ERROR_FS_NO_FILE;
+	}
+
+	fd = open(filename, O_RDONLY);
 	if (fd > 0) {
 		handle->fd = fd;
 		snprintf(handle->filename, sizeof(handle->filename), "%s", filename);
