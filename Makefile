@@ -22,6 +22,7 @@ NET_DIR = src/port/net/mbedtls
 else
 NET_DIR = src/port/net/openssl
 endif
+
 CRYPTO_DIR = src/crypto
 SECURITY_DIR = src/security
 EASYSETUP_DIR = src/easysetup
@@ -29,6 +30,7 @@ MQTT_DIR = src/mqtt
 BUILD_DIR = $(TOPDIR)/build
 OUTPUT_DIR = $(TOPDIR)/output
 CBOR_DIR = src/deps/cbor/tinycbor/src
+
 
 CFLAGS	:= -std=c99 -D_GNU_SOURCE
 ifneq ($(findstring STDK_IOT_CORE_BSP_SUPPORT_UBUNTU, $(STDK_CONFIGS)),)
