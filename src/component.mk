@@ -44,6 +44,9 @@ else ifeq ($(CONFIG_STDK_IOT_CORE_BSP_SUPPORT_MT7682),y)
 else ifeq ($(CONFIG_STDK_IOT_CORE_BSP_SUPPORT_EMW3080),y)
 	COMPONENT_SRCDIRS += port/bsp/emw3080
 	COMPONENT_ADD_INCLUDEDIRS += include/bsp/emw3080
+else ifeq ($(CONFIG_STDK_IOT_CORE_BSP_SUPPORT_XMC4800),y)
+	COMPONENT_SRCDIRS += port/bsp/xmc4800
+	COMPONENT_ADD_INCLUDEDIRS += include/bsp/xmc4800
 else
 	COMPONENT_SRCDIRS += port/bsp/posix
 	COMPONENT_ADD_INCLUDEDIRS += include/bsp/posix
@@ -62,6 +65,9 @@ endif
 ifeq ($(CONFIG_STDK_IOT_CORE_NET_MBEDTLS),y)
 	COMPONENT_SRCDIRS += port/net/mbedtls
 	COMPONENT_ADD_INCLUDEDIRS += port/net/mbedtls
+else ifeq ($(CONFIG_STDK_IOT_CORE_NET_XMC4800),y)
+	COMPONENT_SRCDIRS += port/net/xmc4800_net
+	COMPONENT_ADD_INCLUDEDIRS += port/net/xmc4800_net
 else
 	COMPONENT_SRCDIRS += port/net/openssl
 	COMPONENT_ADD_INCLUDEDIRS += port/net/openssl
