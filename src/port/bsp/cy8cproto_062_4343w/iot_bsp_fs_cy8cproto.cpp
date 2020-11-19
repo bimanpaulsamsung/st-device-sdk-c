@@ -73,21 +73,26 @@ iot_error_t iot_bsp_fs_open(const char *filename, iot_bsp_fs_open_mode_t mode, i
 {
 	int fd;
 	int open_mode;
+	struct stat sfile;
 
 	if (mode == FS_READONLY) {
+		if (stat(filename, &sfile) < 0) {
+			IOT_DEBUG("file doesn't exist");
+			return IOT_ERROR_FS_NO_FILE;
+		}
 		open_mode = O_RDONLY;
 	} else {
 		open_mode = O_RDWR | O_CREAT;
 	}
 
 	fd = open(filename, open_mode, 0644);
-	if (fd == -1) {
-		IOT_DEBUG("file open failed [%s]", strerror(errno));
-		return IOT_ERROR_FS_OPEN_FAIL;
-	} else {
+	if (fd > 0) {
 		handle->fd = fd;
 		snprintf(handle->filename, sizeof(handle->filename), "%s", filename);
 		return IOT_ERROR_NONE;
+	} else {
+		IOT_DEBUG("file open failed [%s]", strerror(errno));
+		return IOT_ERROR_FS_OPEN_FAIL;
 	}
 }
 
