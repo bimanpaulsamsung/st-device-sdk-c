@@ -64,10 +64,12 @@ elif "CONFIG_STDK_IOT_CORE_BSP_SUPPORT_CC3220SF" in vars() and CONFIG_STDK_IOT_C
     include_path("iot-core/src/port/bsp/cc3220sf/")
 elif "CONFIG_STDK_IOT_CORE_BSP_SUPPORT_CY8CPROTO_062_4343W" in vars() and CONFIG_STDK_IOT_CORE_BSP_SUPPORT_CY8CPROTO_062_4343W == 1:
     include_path("iot-core/src/port/bsp/cy8cproto_062_4343w/")
+    exclude.append("iot-core/src/easysetup/http/tcp/iot_easysetup_http_ism43362_AT.c")
 elif "CONFIG_STDK_IOT_CORE_BSP_SUPPORT_RDA5981C" in vars() and CONFIG_STDK_IOT_CORE_BSP_SUPPORT_RDA5981C == 1:
     include_path("iot-core/src/port/bsp/rda5981c/")
 elif "CONFIG_STDK_IOT_CORE_BSP_SUPPORT_STM32" in vars() and CONFIG_STDK_IOT_CORE_BSP_SUPPORT_STM32 == 1:
     include_path("iot-core/src/port/bsp/stm32/")
+    exclude.append("iot-core/src/easysetup/http/tcp/iot_easysetup_http_socket.c")
 else:
     include_path("iot-core/src/port/bsp/posix/")
 
