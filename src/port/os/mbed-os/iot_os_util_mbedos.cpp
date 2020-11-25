@@ -122,6 +122,25 @@ void iot_os_thread_yield()
 	osThreadYield();
 }
 
+int iot_os_thread_get_current_handle(iot_os_thread* thread_handle)
+{
+	Thread *thread = NULL;
+
+	if (!thread_handle)
+		return IOT_OS_FALSE;
+
+	osThreadId_t tid = osThreadGetId();
+	linked_list_error_t ret  = threadlist.search(comp,
+			(void *)tid, (void **)&thread);
+	if (ret != LINKED_LIST_ERROR_NONE) {
+		IOT_ERROR("Invalid Thread!!!");
+		return IOT_OS_FALSE;
+	}
+
+	*thread_handle = thread;
+	return IOT_OS_TRUE;
+}
+
 /* Queue */
 iot_os_queue* iot_os_queue_create(int queue_length, int item_size)
 {
