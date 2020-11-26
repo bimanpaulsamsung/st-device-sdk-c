@@ -61,6 +61,7 @@ void http_cleanup_all_connection(HTTP_CONN_H *handle)
 		handle->accept_sock = CONN_HANDLE_UNINITIALIZED;
 	}
 	iot_os_mutex_unlock(&atmutex);
+	iot_os_mutex_destroy(&atmutex);
 }
 
 void http_cleanup_accepted_connection(HTTP_CONN_H *handle)
@@ -76,6 +77,8 @@ void http_cleanup_accepted_connection(HTTP_CONN_H *handle)
 		handle->accept_sock = CONN_HANDLE_UNINITIALIZED;
 	}
 	iot_os_mutex_unlock(&atmutex);
+
+	iot_os_mutex_destroy(&atmutex);
 }
 
 ssize_t http_packet_send(HTTP_CONN_H *handle, char *tx_buffer, size_t tx_buffer_len)
@@ -132,7 +135,6 @@ iot_error_t http_packet_read(HTTP_CONN_H *handle, char *rx_buffer, size_t rx_buf
 		else if (len == 0) {
 			IOT_WARN("Zero Length Data");
 			IOT_ES_DUMP(IOT_DEBUG_LEVEL_WARN, IOT_DUMP_EASYSETUP_SOCKET_CON_CLOSE, 0);
-			continue;
 //			return IOT_ERROR_EASYSETUP_HTTP_CONN_CLOSED;
 		}
 		else {
@@ -188,7 +190,6 @@ iot_error_t http_packet_read_remaining(HTTP_CONN_H *handle, char *rx_buffer, siz
 		else if (len == 0) {
 			IOT_ERROR("Zero Length Data");
 			IOT_ES_DUMP(IOT_DEBUG_LEVEL_ERROR, IOT_DUMP_EASYSETUP_SOCKET_CON_CLOSE, 0);
-			continue;
 //			return IOT_ERROR_EASYSETUP_HTTP_CONN_CLOSED;
 		}
 		else {
@@ -319,5 +320,6 @@ iot_error_t http_accept_connection(HTTP_CONN_H *handle)
 		return IOT_ERROR_CONNECT_FAIL;
 	}
 
+	iot_os_mutex_init(&atmutex);
 	return IOT_ERROR_NONE;
 }
