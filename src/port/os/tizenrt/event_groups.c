@@ -85,6 +85,7 @@
 #define ADAPTER_FALSE			((base_type_t)0)
 #define ADAPTER_TRUE			((base_type_t)1)
 #define port_max_delay 			(0xffffffff)
+#define PIDHASH(tid) (tid & MAX_PID_MASK)
 
 typedef struct event_group_definition {
 	event_bits_t event_bits;
@@ -117,7 +118,7 @@ event_group_handle_t event_group_create(void)
 static void task_add_event_item(event_node_t *pevent_node)
 {
 	if (pevent_node) {
-		event_data[pevent_node->pid] = pevent_node;
+		event_data[PIDHASH(pevent_node->pid)] = pevent_node;
 	}
 }
 
@@ -127,14 +128,14 @@ static tick_type_t task_reset_event_item_value(event_group_t *pevent_group)
 	pid_t pid = getpid();
 
 	pthread_mutex_lock(&pevent_group->event_group_mux);
-	event_node_t *pevent_node = event_data[pid];
+	event_node_t *pevent_node = event_data[PIDHASH(pid)];
 	if (pevent_node) {
 		/* Get the item value */
 		ret = pevent_node->item_value;
 		/* Remove the current node from event group queue */
 		sq_rem((sq_entry_t *)pevent_node, &(pevent_group->tasks_waiting_for_bits));
 		free(pevent_node);
-		event_data[pid] = NULL;
+		event_data[PIDHASH(pid)] = NULL;
 	}
 	pthread_mutex_unlock(&pevent_group->event_group_mux);
 	return ret;
@@ -520,7 +521,7 @@ void event_group_delete(event_group_handle_t event_group)
 		task_remove_from_unordered_event_list(pevent_node, ptasks_waiting_for_bits, EVENT_UNBLOCKED_DUE_TO_BIT_SET);
 		pevent_node_temp = pevent_node;
 		pevent_node = (event_node_t *)pevent_node_temp->node.flink;
-		event_data[pevent_node_temp->pid] = NULL;
+		event_data[PIDHASH(pevent_node_temp->pid)] = NULL;
 		free(pevent_node_temp);
 	}
 
