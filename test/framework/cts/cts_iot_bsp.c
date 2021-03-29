@@ -174,9 +174,11 @@ int CTS_iot_bsp_test()
             // iot_bsp_nv_data
             cmocka_unit_test(CTS_iot_bsp_nv_get_data_path_EXISTENCE),
             cmocka_unit_test(CTS_iot_bsp_nv_get_data_path_OUT_OF_RANGE),
+#if !defined(CONFIG_STDK_IOT_CORE_OS_SUPPORT_POSIX)
             // iot_bsp_wifi
             cmocka_unit_test(CTS_iot_bsp_wifi_init_MULTIPLE_TRY),
             cmocka_unit_test(CTS_iot_bsp_wifi_get_mac_CONSISTENCY),
+#endif
     };
 
     return cmocka_run_group_tests_name("iot_bsp", CTS_iot_bsp_api, NULL, NULL);
