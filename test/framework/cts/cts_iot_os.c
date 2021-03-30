@@ -295,6 +295,58 @@ void CTS_iot_os_eventgroup_wait_bits_THREADED_TEST(void **state)
     iot_os_thread_delete(test_thread);
 }
 
+static char _multiple_wait_bit0_2_value;
+static char _multiple_wait_bit_1_value;
+static void _event_group_multiple_BIT0_2_wait_thread(iot_os_eventgroup *event_group)
+{
+	unsigned char event;
+
+	event = iot_os_eventgroup_wait_bits(event_group,BIT_0 | BIT_2, true, IOT_OS_MAX_DELAY);
+	if ((event & (BIT_0 | BIT_2)) == (BIT_0 | BIT_2)) {
+		IOT_DEBUG("Bit0, 2 asserted");
+		_multiple_wait_bit0_2_value = 1;
+	} else {
+		assert_true(0);
+	}
+}
+
+static void _event_group_multiple_BIT1_wait_thread(iot_os_eventgroup *event_group)
+{
+	unsigned char event;
+
+	event = iot_os_eventgroup_wait_bits(event_group,BIT_1, true, IOT_OS_MAX_DELAY);
+	if (event & BIT_1) {
+		IOT_DEBUG("Bit1 asserted");
+		_multiple_wait_bit_1_value = 1;
+	} else {
+		assert_true(0);
+	}
+}
+
+void CTS_iot_os_eventgroup_wait_bits_MULTIPLE_WAIT(void **state)
+{
+	iot_os_thread bit0_2_thread;
+	iot_os_thread bit1_thread;
+	iot_os_eventgroup *event_group = (iot_os_eventgroup *) *state;
+
+	// When: two threads wait BIT_0_1 and BIT_2 events
+	iot_os_thread_create(_event_group_multiple_BIT0_2_wait_thread, "event_group_test_bit0_2", 2048, event_group, 5,
+	                     &bit0_2_thread);
+	iot_os_thread_create(_event_group_multiple_BIT1_wait_thread, "event_group_test_bit1", 2048, event_group, 5,
+	                     &bit1_thread);
+	// When: set BIT_0_1 and BIT_2 events after 300ms delay
+	iot_os_delay(300);
+	iot_os_eventgroup_set_bits(event_group, BIT_0 | BIT_2);
+	iot_os_eventgroup_set_bits(event_group, BIT_1);
+	// Then: check the events wakeup after 300ms delay
+	iot_os_delay(300);
+	assert_int_equal(_multiple_wait_bit0_2_value, 1);
+	assert_int_equal(_multiple_wait_bit_1_value, 1);
+	// Teardown
+	iot_os_thread_delete(bit0_2_thread);
+	iot_os_thread_delete(bit1_thread);
+}
+
 int CTS_iot_os_queue_test()
 {
     const struct CMUnitTest CTS_iot_os_queue_api[] = {
@@ -317,6 +369,8 @@ int CTS_iot_os_eventgroup_test()
 		    cmocka_unit_test_setup_teardown(CTS_iot_os_eventgroup_wait_bits_MULTIPLE_SET,
 		                                    CTS_iot_os_eventgroup_wait_bits_SETUP, CTS_iot_os_eventgroup_wait_bits_TEARDOWN),
 		    cmocka_unit_test_setup_teardown(CTS_iot_os_eventgroup_wait_bits_THREADED_TEST,
+		                                    CTS_iot_os_eventgroup_wait_bits_SETUP, CTS_iot_os_eventgroup_wait_bits_TEARDOWN),
+		    cmocka_unit_test_setup_teardown(CTS_iot_os_eventgroup_wait_bits_MULTIPLE_WAIT,
 		                                    CTS_iot_os_eventgroup_wait_bits_SETUP, CTS_iot_os_eventgroup_wait_bits_TEARDOWN),
     };
 
