@@ -811,8 +811,8 @@ int supplicant_stop_station(void)
 int supplicant_join_network(char *ssid_key, char *password)
 {
 	struct wpa_ssid ssid;
-	snprintf(ssid.ssid, IOT_WIFI_MAX_SSID_LEN, "%s", ssid_key);
-	snprintf(ssid.pswd, IOT_WIFI_MAX_PASS_LEN, "%s", password);
+	snprintf(ssid.ssid, sizeof(ssid.ssid), "%s", ssid_key);
+	snprintf(ssid.pswd, sizeof(ssid.pswd), "%s", password);
 	ssid.mode = WPAS_MODE_INFRA;
 	ssid.key_mgmt = "WPA-PSK";
 
@@ -873,8 +873,8 @@ int supplicant_start_softap(char *ssid_name, char *pswd)
 		return -1;
 	}
 
-	snprintf(ssid.ssid, IOT_WIFI_MAX_SSID_LEN, "%s", ssid_name);
-	snprintf(ssid.pswd, IOT_WIFI_MAX_PASS_LEN, "%s", pswd);
+	snprintf(ssid.ssid, sizeof(ssid.ssid), "%s", ssid_name);
+	snprintf(ssid.pswd, sizeof(ssid.pswd), "%s", pswd);
 	ssid.mode = WPAS_MODE_AP;
 	ssid.key_mgmt = "WPA-PSK";
 
