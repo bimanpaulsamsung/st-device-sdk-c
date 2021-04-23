@@ -146,6 +146,21 @@ iot_error_t iot_bsp_wifi_get_mac(struct iot_mac *wifi_mac);
  */
 iot_wifi_freq_t iot_bsp_wifi_get_freq(void);
 
+#if defined(CONFIG_STDK_IOT_CORE_WIFI_KEEPALIVE)
+/**
+ * @brief  Set the Wi-Fi keep alive
+ *
+ * This function set the tcp keep alive parameters for wifi chip
+ *
+ * @param[in] idle			tcp keep alive idle with seconds unit
+ * @param[in] interval		tcp keep alive intrval
+ * @param[in] count			tcp keep alive count
+ * @return
+ *   IOT_ERROR_NONE : succeed
+ */
+iot_error_t iot_bsp_wifi_set_keepalive(uint32_t idle, uint32_t interval, uint32_t count);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

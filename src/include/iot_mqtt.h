@@ -123,6 +123,15 @@ DLLExport int st_mqtt_create(st_mqtt_client *client, st_mqtt_event_callback call
  */
 DLLExport int st_mqtt_connect(st_mqtt_client client, st_mqtt_broker_info_t *broker, st_mqtt_connect_data *connect_data);
 
+/** Set TCP Keep Alive Parameters for persistent connection
+ *  @param client - the client object to use
+ *  @param tcp_idle - tcp keep alive idle with seconds unit
+ *  @param tcp_interval - tcp keep alive intrval
+ *  @param tcp_count - tcp keep alive count
+ *  @return success code
+ */
+DLLExport int st_mqtt_tcp_keep_alive(st_mqtt_client client, unsigned int  tcp_idle, unsigned int  tcp_interval , unsigned int  tcp_count);
+
 /** MQTT Publish - send an MQTT publish packet and wait for all acks to complete for all QoSs
  *  @param client - the client object to use
  *  @param msg - the publish packet message to send

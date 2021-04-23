@@ -60,6 +60,8 @@ typedef struct iot_net_interface {
 	iot_error_t (*tcp_keepalive)(iot_net_interface_t *, unsigned int, unsigned int, unsigned int);
 	/**< @brief disconnect the server connection */
 	void (*disconnect)(iot_net_interface_t *);
+	/**< @brief enable tcp keep-alive */
+	iot_error_t (*tcp_keepalive)(iot_net_interface_t *, unsigned int, unsigned int, unsigned int);
 	/**< @brief check network socket status */
 	int (*select)(iot_net_interface_t *, unsigned int);
 	/**< @brief read from network */
