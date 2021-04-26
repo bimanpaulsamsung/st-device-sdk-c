@@ -933,7 +933,7 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
               case IOT_COMMAND_SET_KEEPALIVE:
 			conn_param = (iot_conn_params_t *)cmd->param;
 			if (!conn_param) {
-				IOT_ERROR("There is no connection paramters  for cmd :%d", cmd->cmd_type);
+				IOT_ERROR("There is no connection parameters  for cmd :%d", cmd->cmd_type);
 				IOT_DUMP_MAIN(ERROR, BASE, err);
 				break;
 			}
