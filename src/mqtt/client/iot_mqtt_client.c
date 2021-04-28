@@ -1236,7 +1236,7 @@ exit:
 int st_mqtt_tcp_keep_alive(st_mqtt_client client, unsigned int  tcp_idle,
 			unsigned int  tcp_interval , unsigned int  tcp_count)
 {
-	iot_error_t iot_err;
+	iot_error_t iot_err = 0;
 	MQTTClient *c = client;
 
 	if (c->net->tcp_keepalive) {
