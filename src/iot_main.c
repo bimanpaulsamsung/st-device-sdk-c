@@ -1006,7 +1006,7 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 			}
 #else
 		      /* Configure TCP keep alive parameters using socket API */
-			st_mqtt_tcp_keep_alive(ctx->reg_mqttcli, conn_param->tcp_idle,
+			st_mqtt_tcp_keep_alive(ctx->evt_mqttcli, conn_param->tcp_idle,
 					conn_param->tcp_interval, conn_param->tcp_count);
 #endif
 			break;
