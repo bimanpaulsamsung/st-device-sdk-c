@@ -17,14 +17,29 @@
  ****************************************************************************/
 
 #include "iot_bsp_fs.h"
+#include "lfs_qspibd.h"
+
+static lfs_t lfs;
 
 iot_error_t iot_bsp_fs_init()
 {
+	int ret = QSPI_LFS_Config();
+
+	ret = qspi_lfs_mount(&lfs);
+
+	// reformat if we can't mount the filesystem
+	// this should only happen on the first boot
+	if (ret) {
+		qspi_lfs_format(&lfs);
+		qspi_lfs_mount(&lfs);
+	}
 	return IOT_ERROR_NONE;
 }
 
 iot_error_t iot_bsp_fs_deinit()
 {
+	lfs_unmount(&lfs);
+	BSP_QSPI_DeInit();
 	return IOT_ERROR_NONE;
 }
 
