@@ -134,5 +134,14 @@ iot_error_t iot_bsp_fs_close(iot_bsp_fs_handle_t handle)
 
 iot_error_t iot_bsp_fs_remove(const char* filename)
 {
+	if (filename == NULL) {
+		return IOT_ERROR_INVALID_ARGS;
+	}
+
+	int ret = lfs_remove(&lfs, filename);
+	if (ret < 0) {
+		return IOT_ERROR_FS_REMOVE_FAIL;
+	}
+
 	return IOT_ERROR_NONE;
 }
