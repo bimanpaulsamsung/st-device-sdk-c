@@ -45,28 +45,90 @@ iot_error_t iot_bsp_fs_deinit()
 
 iot_error_t iot_bsp_fs_open(const char* filename, iot_bsp_fs_open_mode_t mode, iot_bsp_fs_handle_t* handle)
 {
+	int ret;
+	lfs_file_t *file;
+
+	file = malloc(sizeof(lfs_file_t));
+	if (!file) {
+		return IOT_ERROR_MEM_ALLOC;
+	}
+
+	if (mode == FS_READWRITE) {
+		ret = lfs_file_open(&lfs, file, filename, LFS_O_RDWR | LFS_O_CREAT);
+	} else {
+		ret = lfs_file_open(&lfs, file, filename, LFS_O_RDONLY);
+	}
+
+	if (ret < 0) {
+		free(file);
+		return IOT_ERROR_FS_OPEN_FAIL;
+	}
+
+	handle->lfs_file = file;
 	return IOT_ERROR_NONE;
 
 }
 
 iot_error_t iot_bsp_fs_open_from_stnv(const char* filename, iot_bsp_fs_handle_t* handle)
 {
-	return IOT_ERROR_NONE;
-
+	return iot_bsp_fs_open(filename, FS_READONLY, handle);
 }
 
 iot_error_t iot_bsp_fs_read(iot_bsp_fs_handle_t handle, char* buffer, size_t *length)
 {
+	lfs_file_t *file;
+
+	file = handle.lfs_file;
+	if (!file) {
+		return IOT_ERROR_FS_NO_FILE;
+	}
+
+	char *data = (char *)malloc(*length + 1);
+	IOT_DEBUG_CHECK(data == NULL, IOT_ERROR_MEM_ALLOC, "Memory allocation fail");
+
+	lfs_ssize_t size = lfs_file_read(&lfs, file, data, *length);
+	IOT_DEBUG_CHECK(size < 0, IOT_ERROR_FS_READ_FAIL, "read fail [%d]", size);
+
+	memcpy(buffer, data, size);
+	if (size < *length) {
+		buffer[size] = '\0';
+	}
+
+	*length = size;
+
+	free(data);
+
 	return IOT_ERROR_NONE;
 }
 
 iot_error_t iot_bsp_fs_write(iot_bsp_fs_handle_t handle, const char* data, unsigned int length)
 {
+	lfs_file_t *file = handle.lfs_file;
+
+	if (!file) {
+		return IOT_ERROR_FS_NO_FILE;
+	}
+
+	lfs_ssize_t ret = lfs_file_write(&lfs, file, data, length);
+	if (ret < 0) {
+		return IOT_ERROR_FS_WRITE_FAIL;
+	}
+
 	return IOT_ERROR_NONE;
 }
 
 iot_error_t iot_bsp_fs_close(iot_bsp_fs_handle_t handle)
 {
+	int ret;
+	if (!handle.lfs_file) {
+		return IOT_ERROR_FS_NO_FILE;
+	}
+
+	ret = lfs_file_close(&lfs, handle.lfs_file);
+	if (ret < 0) {
+		return IOT_ERROR_FS_CLOSE_FAIL;
+	}
+
 	return IOT_ERROR_NONE;
 }
 

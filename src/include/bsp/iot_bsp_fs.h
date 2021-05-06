@@ -32,6 +32,7 @@ extern "C" {
  */
 typedef struct {
 	int fd;
+	void *lfs_file;
 	char filename[128];
 } iot_bsp_fs_handle_t;
 
