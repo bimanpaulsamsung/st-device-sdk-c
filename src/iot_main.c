@@ -490,6 +490,7 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 	size_t str_len;
 	struct iot_state_data *state_data;
 	iot_conn_params_t *conn_param;
+	iot_conn_params_t connparam;
 	unsigned int needed_tout = 0;
 	iot_noti_data_t *noti = NULL;
 	bool is_diff_dip = false;
@@ -1000,15 +1001,35 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 				and write to WiFi controller */
 			err = iot_bsp_wifi_set_keepalive(conn_param->tcp_idle,
 				conn_param->tcp_interval, conn_param->tcp_count);
-			if (err < 0) {
-				IOT_ERROR("failed to set wifi keep alive\n");
-				IOT_DUMP_MAIN(ERROR, BASE, err);
-			}
 #else
 		      /* Configure TCP keep alive parameters using socket API */
-			st_mqtt_tcp_keep_alive(ctx->evt_mqttcli, conn_param->tcp_idle,
+			err = st_mqtt_tcp_keep_alive(ctx->evt_mqttcli, conn_param->tcp_idle,
 					conn_param->tcp_interval, conn_param->tcp_count);
 #endif
+			if (err < 0) {
+				IOT_ERROR("failed to set wifi keep alive\n");
+				ctx->keepalive_cb(IOT_KEEPALIVE_FAIL, NULL);
+				IOT_DUMP_MAIN(ERROR, BASE, err);
+			} else {
+				ctx->keepalive_cb(IOT_KEEPALIVE_SUCCESS, NULL);
+			}
+			break;
+              case IOT_COMMAND_GET_KEEPALIVE:
+#if defined(CONFIG_STDK_IOT_CORE_WIFI_KEEPALIVE)
+		      /* Send TCP keep alive packets to WiFi Module. WiFi module may frame customized packet
+				and write to WiFi controller */
+			err = iot_bsp_wifi_get_keepalive(&connparam);
+#else
+		      /* Configure TCP keep alive parameters using socket API */
+			err = st_mqtt_get_tcp_keep_alive(ctx->evt_mqttcli, &connparam);
+#endif
+			if (err < 0) {
+				IOT_ERROR("failed to set wifi keep alive\n");
+				ctx->keepalive_cb(IOT_KEEPALIVE_FAIL, NULL);
+				IOT_DUMP_MAIN(ERROR, BASE, err);
+			} else {
+				ctx->keepalive_cb(IOT_KEEPALIVE_VALUE, &connparam);
+			}
 			break;
 		default:
 			IOT_ERROR("Unsupported command(%d)", cmd->cmd_type);
@@ -1119,7 +1140,7 @@ static void _iot_main_task(struct iot_context *ctx)
 	iot_state_t next_state;
 	unsigned int task_cycle = IOT_MAIN_TASK_DEFAULT_CYCLE;
 #endif
-
+	iot_device_cleanup(ctx);
 	for( ; ; ) {
 #if defined(STDK_MQTT_TASK)
 		curr_events = iot_os_eventgroup_wait_bits(ctx->iot_events,
@@ -1832,11 +1853,12 @@ do { \
 	ctx->usr_events ? ( \
 	ctx->iot_events ? true : false) : false) : false) : false)
 
-int st_set_conn_params(IOT_CTX *iot_ctx, iot_conn_params_t conn)
+int st_set_conn_params(IOT_CTX *iot_ctx, iot_conn_params_t conn, st_keepalive_cb keepalive_cb)
 {
 	struct iot_context *ctx = (struct iot_context*)iot_ctx;
 	iot_error_t iot_err;
 
+	ctx->keepalive_cb = keepalive_cb;
 	iot_err = iot_command_send(ctx, IOT_COMMAND_SET_KEEPALIVE,
 				&conn, sizeof( iot_conn_params_t));
 
@@ -1844,6 +1866,28 @@ int st_set_conn_params(IOT_CTX *iot_ctx, iot_conn_params_t conn)
 		IOT_ERROR("failed to send command(%d)", iot_err);
 		IOT_DUMP_MAIN(ERROR, BASE, iot_err);
 	}
+	return iot_err;
+}
+
+int st_get_conn_params(IOT_CTX *iot_ctx, st_keepalive_cb keepalive_cb)
+{
+	struct iot_context *ctx = (struct iot_context*)iot_ctx;
+	iot_error_t iot_err;
+	iot_conn_params_t conn;
+
+	conn.tcp_idle = 0;
+	conn.tcp_interval = 0;
+	conn.tcp_count = 0;
+
+	ctx->keepalive_cb = keepalive_cb;
+	iot_err = iot_command_send(ctx, IOT_COMMAND_GET_KEEPALIVE,
+				&conn, sizeof(iot_conn_params_t *));
+
+	if (iot_err != IOT_ERROR_NONE) {
+		IOT_ERROR("failed to send command(%d)", iot_err);
+		IOT_DUMP_MAIN(ERROR, BASE, iot_err);
+	}
+
 	return iot_err;
 }
 

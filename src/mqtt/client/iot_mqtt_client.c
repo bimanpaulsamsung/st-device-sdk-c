@@ -1261,6 +1261,24 @@ int st_mqtt_tcp_keep_alive(st_mqtt_client client, unsigned int  tcp_idle,
 	return iot_err;
 }
 
+int st_mqtt_get_tcp_keep_alive(st_mqtt_client client, iot_conn_params_t *conn)
+{
+	iot_error_t iot_err = IOT_ERROR_NONE;
+	MQTTClient *c = client;
+
+	if (c->net->tcp_keepalive) {
+		iot_err = c->net->get_tcp_keepalive(c->net, &conn->tcp_idle,
+				&conn->tcp_interval, &conn->tcp_count);
+		if (iot_err) {
+			IOT_WARN("fail to set keepalive %d", iot_err);
+		}
+	} else {
+		IOT_ERROR("missing function pointer - tcp_keepalive");
+		iot_err = IOT_ERROR_UNINITIALIZED;
+	}
+	return iot_err;
+}
+
 int st_mqtt_subscribe(st_mqtt_client client, const char *topic, int qos)
 {
 	MQTTClient *c = client;

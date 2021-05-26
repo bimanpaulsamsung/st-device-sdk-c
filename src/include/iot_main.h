@@ -82,9 +82,10 @@ enum iot_command_type {
 	IOT_COMMAND_CHANGE_STATE_TIMEOUT,
 
 	IOT_COMMAND_SELF_CLEANUP,
-       IOT_COMMAND_SET_KEEPALIVE,
+	IOT_COMMAND_SET_KEEPALIVE,
+	IOT_COMMAND_GET_KEEPALIVE,
 
-	IOT_COMMAND_TYPE_MAX = IOT_COMMAND_SET_KEEPALIVE, /* MAX : under 32 */
+	IOT_COMMAND_TYPE_MAX = IOT_COMMAND_GET_KEEPALIVE, /* MAX : under 32 */
 	IOT_COMMNAD_STATE_UPDATE,
 };
 
@@ -286,6 +287,9 @@ struct iot_context {
 
 	st_cap_noti_cb noti_cb;		/**< @brief notification handling callback for each capability */
 	void *noti_usr_data;		/**< @brief notification handling callback data for user */
+
+	st_keepalive_cb keepalive_cb;		/**< @brief Keepalive handling callback for each capability */
+	void *keepalive_usr_data;		/**< @brief Keepalive handling callback data for user */
 
 	st_status_cb status_cb;		/**< @brief iot core status handling callback for user */
 	iot_status_t status_maps;	/**< @brief iot status callback maps to check it call or not */
