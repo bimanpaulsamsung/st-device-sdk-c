@@ -54,8 +54,14 @@ void event_loop()
 static void iot_status_cb(iot_status_t status,
                           iot_stat_lv_t stat_lv, void *usr_data)
 {
+    iot_conn_params_t conn = {90, 2, 3};
     g_iot_status = status;
     printf("iot_status: %d, lv: %d\n", status, stat_lv);
+
+    // Set TCP keep alive parameters only after cloud connection is established
+    if(status == IOT_STATUS_CONNECTING && stat_lv == IOT_STAT_LV_DONE) {
+      st_set_conn_params(ctx, conn);
+    }
 }
 
 void cap_switch_init_cb(IOT_CAP_HANDLE *handle, void *usr_data)

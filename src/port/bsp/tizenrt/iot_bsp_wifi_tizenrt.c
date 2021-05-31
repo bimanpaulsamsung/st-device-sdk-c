@@ -378,3 +378,9 @@ iot_wifi_freq_t iot_bsp_wifi_get_freq(void)
 {
 	return IOT_WIFI_FREQ_2_4G_ONLY;
 }
+
+iot_error_t iot_bsp_wifi_set_keepalive(uint32_t idle, uint32_t interval, uint32_t count)
+{
+	IOT_INFO("Wifi Keep alive idle %d, interval %d, count %d", idle, interval, count);
+	return IOT_ERROR_NONE;
+}

@@ -489,6 +489,8 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 	char *usr_id = NULL;
 	size_t str_len;
 	struct iot_state_data *state_data;
+	iot_conn_params_t *conn_param;
+	iot_conn_params_t connparam;
 	unsigned int needed_tout = 0;
 	iot_noti_data_t *noti = NULL;
 	bool is_diff_dip = false;
@@ -987,7 +989,53 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 			}
 
 			break;
-
+              case IOT_COMMAND_SET_KEEPALIVE:
+			conn_param = (iot_conn_params_t *)cmd->param;
+			if (!conn_param) {
+				IOT_ERROR("There is no connection parameters  for cmd :%d", cmd->cmd_type);
+				IOT_DUMP_MAIN(ERROR, BASE, err);
+				break;
+			}
+#if defined(CONFIG_STDK_IOT_CORE_WIFI_KEEPALIVE)
+		      /* Send TCP keep alive packets to WiFi Module. WiFi module may frame customized packet
+				and write to WiFi controller */
+			err = iot_bsp_wifi_set_keepalive(conn_param->tcp_idle,
+				conn_param->tcp_interval, conn_param->tcp_count);
+			if (err < 0) {
+				IOT_ERROR("failed to set wifi keep alive\n");
+				IOT_DUMP_MAIN(ERROR, BASE, err);
+			}
+#else
+		      /* Configure TCP keep alive parameters using socket API */
+			err = st_mqtt_tcp_keep_alive(ctx->evt_mqttcli, conn_param->tcp_idle,
+					conn_param->tcp_interval, conn_param->tcp_count);
+			if (err) {
+				ctx->keepalive_cb(IOT_KEEPALIVE_FAIL, NULL);
+			} else {
+				ctx->keepalive_cb(IOT_KEEPALIVE_SUCCESS, NULL);
+			}
+#endif
+			break;
+              case IOT_COMMAND_GET_KEEPALIVE:
+#if defined(CONFIG_STDK_IOT_CORE_WIFI_KEEPALIVE)
+		      /* Send TCP keep alive packets to WiFi Module. WiFi module may frame customized packet
+				and write to WiFi controller */
+			err = iot_bsp_wifi_get_keepalive(&conn_param->tcp_idle,
+				&conn_param->tcp_interval, &conn_param->tcp_count);
+			if (err < 0) {
+				IOT_ERROR("failed to set wifi keep alive\n");
+				IOT_DUMP_MAIN(ERROR, BASE, err);
+			}
+#else
+		      /* Configure TCP keep alive parameters using socket API */
+			err = st_mqtt_get_tcp_keep_alive(ctx->evt_mqttcli, &connparam);
+			if (err) {
+				ctx->keepalive_cb(IOT_KEEPALIVE_FAIL, NULL);
+			} else {
+				ctx->keepalive_cb(IOT_KEEPALIVE_VALUE, &connparam);
+			}
+#endif
+			break;
 		default:
 			IOT_ERROR("Unsupported command(%d)", cmd->cmd_type);
 			err = IOT_ERROR_BAD_REQ;
@@ -1097,7 +1145,7 @@ static void _iot_main_task(struct iot_context *ctx)
 	iot_state_t next_state;
 	unsigned int task_cycle = IOT_MAIN_TASK_DEFAULT_CYCLE;
 #endif
-
+	iot_device_cleanup(ctx);
 	for( ; ; ) {
 #if defined(STDK_MQTT_TASK)
 		curr_events = iot_os_eventgroup_wait_bits(ctx->iot_events,
@@ -1809,6 +1857,52 @@ do { \
 	ctx->cmd_queue ? ( \
 	ctx->usr_events ? ( \
 	ctx->iot_events ? true : false) : false) : false) : false)
+
+int st_set_conn_params(IOT_CTX *iot_ctx, iot_conn_params_t conn, st_keepalive_cb keepalive_cb)
+{
+	struct iot_context *ctx = (struct iot_context*)iot_ctx;
+	iot_error_t iot_err;
+
+	ctx->keepalive_cb = keepalive_cb;
+	iot_err = iot_command_send(ctx, IOT_COMMAND_SET_KEEPALIVE,
+				&conn, sizeof( iot_conn_params_t));
+
+	if (iot_err != IOT_ERROR_NONE) {
+		IOT_ERROR("failed to send command(%d)", iot_err);
+		IOT_DUMP_MAIN(ERROR, BASE, iot_err);
+	}
+	return iot_err;
+}
+
+int st_get_conn_params(IOT_CTX *iot_ctx, st_keepalive_cb keepalive_cb)
+{
+	struct iot_context *ctx = (struct iot_context*)iot_ctx;
+	iot_error_t iot_err;
+	iot_conn_params_t conn;
+
+	conn.tcp_idle = 0;
+	conn.tcp_interval = 0;
+	conn.tcp_count = 0;
+
+	ctx->keepalive_cb = keepalive_cb;
+	iot_err = iot_command_send(ctx, IOT_COMMAND_GET_KEEPALIVE,
+				&conn, sizeof(iot_conn_params_t *));
+
+	if (iot_err != IOT_ERROR_NONE) {
+		IOT_ERROR("failed to send command(%d)", iot_err);
+		IOT_DUMP_MAIN(ERROR, BASE, iot_err);
+	}
+
+//	while (	conn->tcp_idle == 0 &&
+//	conn->tcp_interval == 0 &&
+//	conn->tcp_count == 0) {
+//		iot_os_delay(1000);
+//		IOT_ERROR("Waiting for value to change (%d) (%d) (%d)",conn->tcp_idle,
+//				conn->tcp_interval, conn->tcp_count);
+//	}
+
+	return iot_err;
+}
 
 int st_conn_start(IOT_CTX *iot_ctx, st_status_cb status_cb,
 		iot_status_t maps, void *usr_data, iot_pin_t *pin_num)
