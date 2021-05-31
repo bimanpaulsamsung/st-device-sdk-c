@@ -833,8 +833,8 @@ static int _iot_mqtt_connect_net(MQTTClient *client, st_mqtt_broker_info_t *brok
 		goto exit;
 	}
 
-	if (client->net->tcp_keepalive) {
-		iot_err = client->net->tcp_keepalive(client->net, ST_MQTT_TCP_KEEPALIVE_IDLE,
+	if (client->net->set_tcp_keepalive) {
+		iot_err = client->net->set_tcp_keepalive(client->net, ST_MQTT_TCP_KEEPALIVE_IDLE,
 				ST_MQTT_TCP_KEEPALIVE_COUNT,
 				ST_MQTT_TCP_KEEPALIVE_INTERVAL);
 		if (iot_err) {
@@ -1242,14 +1242,14 @@ exit:
 	return rc;
 }
 
-int st_mqtt_tcp_keep_alive(st_mqtt_client client, unsigned int  tcp_idle,
+int st_mqtt_set_tcp_keep_alive(st_mqtt_client client, unsigned int  tcp_idle,
 			unsigned int  tcp_interval , unsigned int  tcp_count)
 {
 	iot_error_t iot_err = IOT_ERROR_NONE;
 	MQTTClient *c = client;
 
-	if (c->net->tcp_keepalive) {
-		iot_err = c->net->tcp_keepalive(c->net, tcp_idle,
+	if (c->net->set_tcp_keepalive) {
+		iot_err = c->net->set_tcp_keepalive(c->net, tcp_idle,
 				tcp_interval, tcp_count);
 		if (iot_err) {
 			IOT_WARN("fail to set keepalive %d", iot_err);
@@ -1266,7 +1266,7 @@ int st_mqtt_get_tcp_keep_alive(st_mqtt_client client, iot_conn_params_t *conn)
 	iot_error_t iot_err = IOT_ERROR_NONE;
 	MQTTClient *c = client;
 
-	if (c->net->tcp_keepalive) {
+	if (c->net->get_tcp_keepalive) {
 		iot_err = c->net->get_tcp_keepalive(c->net, &conn->tcp_idle,
 				&conn->tcp_interval, &conn->tcp_count);
 		if (iot_err) {

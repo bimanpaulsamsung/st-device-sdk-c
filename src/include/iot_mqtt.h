@@ -130,7 +130,7 @@ DLLExport int st_mqtt_connect(st_mqtt_client client, st_mqtt_broker_info_t *brok
  *  @param tcp_count - tcp keep alive count
  *  @return success code
  */
-DLLExport int st_mqtt_tcp_keep_alive(st_mqtt_client client, unsigned int  tcp_idle, unsigned int  tcp_interval , unsigned int  tcp_count);
+DLLExport int st_mqtt_set_tcp_keep_alive(st_mqtt_client client, unsigned int  tcp_idle, unsigned int  tcp_interval , unsigned int  tcp_count);
 
 /** Get TCP Keep Alive Parameters for persistent connection
  *  @param client - the client object to use

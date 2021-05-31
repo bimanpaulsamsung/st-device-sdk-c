@@ -288,7 +288,8 @@ struct iot_context {
 	st_cap_noti_cb noti_cb;		/**< @brief notification handling callback for each capability */
 	void *noti_usr_data;		/**< @brief notification handling callback data for user */
 
-	st_keepalive_cb keepalive_cb;		/**< @brief Keepalive handling callback for each capability */
+	st_keepalive_cb get_keepalive_cb;		/**< @brief Keepalive handling callback for each capability */
+	st_keepalive_cb set_keepalive_cb;		/**< @brief Keepalive handling callback for each capability */
 	void *keepalive_usr_data;		/**< @brief Keepalive handling callback data for user */
 
 	st_status_cb status_cb;		/**< @brief iot core status handling callback for user */

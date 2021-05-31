@@ -1003,15 +1003,15 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 				conn_param->tcp_interval, conn_param->tcp_count);
 #else
 		      /* Configure TCP keep alive parameters using socket API */
-			err = st_mqtt_tcp_keep_alive(ctx->evt_mqttcli, conn_param->tcp_idle,
+			err = st_mqtt_set_tcp_keep_alive(ctx->evt_mqttcli, conn_param->tcp_idle,
 					conn_param->tcp_interval, conn_param->tcp_count);
 #endif
 			if (err < 0) {
 				IOT_ERROR("failed to set wifi keep alive\n");
-				ctx->keepalive_cb(IOT_KEEPALIVE_FAIL, NULL);
+				ctx->set_keepalive_cb(IOT_KEEPALIVE_FAIL, NULL);
 				IOT_DUMP_MAIN(ERROR, BASE, err);
 			} else {
-				ctx->keepalive_cb(IOT_KEEPALIVE_SUCCESS, NULL);
+				ctx->set_keepalive_cb(IOT_KEEPALIVE_SUCCESS, NULL);
 			}
 			break;
               case IOT_COMMAND_GET_KEEPALIVE:
@@ -1025,10 +1025,10 @@ static iot_error_t _do_iot_main_command(struct iot_context *ctx,
 #endif
 			if (err < 0) {
 				IOT_ERROR("failed to set wifi keep alive\n");
-				ctx->keepalive_cb(IOT_KEEPALIVE_FAIL, NULL);
+				ctx->get_keepalive_cb(IOT_KEEPALIVE_FAIL, NULL);
 				IOT_DUMP_MAIN(ERROR, BASE, err);
 			} else {
-				ctx->keepalive_cb(IOT_KEEPALIVE_VALUE, &connparam);
+				ctx->get_keepalive_cb(IOT_KEEPALIVE_VALUE, &connparam);
 			}
 			break;
 		default:
@@ -1858,7 +1858,7 @@ int st_set_conn_params(IOT_CTX *iot_ctx, iot_conn_params_t conn, st_keepalive_cb
 	struct iot_context *ctx = (struct iot_context*)iot_ctx;
 	iot_error_t iot_err;
 
-	ctx->keepalive_cb = keepalive_cb;
+	ctx->set_keepalive_cb = keepalive_cb;
 	iot_err = iot_command_send(ctx, IOT_COMMAND_SET_KEEPALIVE,
 				&conn, sizeof( iot_conn_params_t));
 
@@ -1879,7 +1879,7 @@ int st_get_conn_params(IOT_CTX *iot_ctx, st_keepalive_cb keepalive_cb)
 	conn.tcp_interval = 0;
 	conn.tcp_count = 0;
 
-	ctx->keepalive_cb = keepalive_cb;
+	ctx->get_keepalive_cb = keepalive_cb;
 	iot_err = iot_command_send(ctx, IOT_COMMAND_GET_KEEPALIVE,
 				&conn, sizeof(iot_conn_params_t *));
 

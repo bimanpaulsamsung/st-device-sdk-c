@@ -22,8 +22,8 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-//#include <netinet/in.h>
-//#include <netinet/tcp.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <iot_util.h>
 #if defined(CONFIG_STDK_IOT_CORE_OS_SUPPORT_POSIX)
 #include <netinet/in.h>
@@ -404,7 +404,7 @@ static void _iot_net_tls_disconnect(iot_net_interface_t *net)
 	_iot_net_cleanup_platform_context(net);
 }
 
-static iot_error_t _iot_net_tcp_keepalive(iot_net_interface_t *net, unsigned int idle, unsigned int intval, unsigned int count)
+static iot_error_t _iot_net_set_tcp_keepalive(iot_net_interface_t *net, unsigned int idle, unsigned int intval, unsigned int count)
 {
 	iot_error_t err;
 	int socket;
@@ -558,9 +558,8 @@ iot_error_t iot_net_init(iot_net_interface_t *net)
 	}
 
 	net->connect = _iot_net_tls_connect;
-	net->tcp_keepalive = _iot_net_tcp_keepalive;
 	net->disconnect = _iot_net_tls_disconnect;
-	net->tcp_keepalive = _iot_net_tcp_keepalive;
+	net->set_tcp_keepalive = _iot_net_set_tcp_keepalive;
 	net->get_tcp_keepalive = _iot_net_get_tcp_keepalive;
 	net->select = _iot_net_select;
 	net->read = _iot_net_tls_read;
